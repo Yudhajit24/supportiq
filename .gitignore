@@ -25,6 +25,7 @@ dist/
 .DS_Store
 
 # Secrets (IMPORTANT)
+.env
 *.env
 .env.*
 application-prod.yml
