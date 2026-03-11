@@ -1,65 +1,113 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Send, Clock, User, Tag, AlertTriangle, MessageSquare, Sparkles, ThumbsUp, Copy, Check } from 'lucide-react';
-
-const mockTicket = {
-    id: 'ticket-1', subject: 'Cannot login to dashboard',
-    description: 'I have been trying to login for 30 minutes. Every time I enter credentials, it shows a spinner and times out.',
-    status: 'in_progress', priority: 'high', category: 'Technical',
-    customer: { name: 'John Doe', email: 'john.doe@acme.com' },
-    assignedTo: { name: 'Mike Johnson' },
-    created: '2024-02-15T10:30:00Z', slaDeadline: '2024-02-16T10:30:00Z', sentiment: -0.6,
-};
-
-const initialComments = [
-    { id: '1', author: 'John Doe', isCustomer: true, content: 'Login keeps timing out. Very frustrating!', time: '10:30 AM' },
-    { id: '2', author: 'Mike Johnson', isCustomer: false, content: 'Hi John, let me look into this. Could you try clearing your browser cache?', time: '10:45 AM' },
-    { id: '3', author: 'John Doe', isCustomer: true, content: 'Tried clearing cache and incognito mode — still broken.', time: '11:00 AM' },
-    { id: '4', author: 'Mike Johnson', isCustomer: false, content: 'Found the issue — session conflict in auth service. Cleared your sessions. Try now.', time: '11:15 AM' },
-];
-
-const aiSuggestion = {
-    response: "Thank you for your patience. This is typically caused by a cached auth token conflict.\n\n1. Clear all browser data for our domain\n2. Try logging in with incognito\n3. If it persists, I can reset your session\n\nI'll escalate to engineering to prevent future issues.",
-    confidence: 0.87, category: 'Technical', sentiment: 'Frustrated',
-};
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, Send, Clock, User, Tag, AlertTriangle, MessageSquare, Sparkles, Copy, Check, Loader2 } from 'lucide-react';
+import { ticketApi, aiService } from '../lib/api';
 
 const statusOpts = ['open', 'in_progress', 'pending', 'resolved', 'closed'];
-const statusBg: Record<string, string> = { open: 'bg-white', in_progress: 'bg-nb-yellow', pending: 'bg-nb-sage', resolved: 'bg-nb-charcoal text-white', closed: 'bg-gray-200' };
+const statusBg: Record<string, string> = {
+    open: 'bg-white', in_progress: 'bg-nb-yellow', pending: 'bg-nb-sage',
+    resolved: 'bg-nb-charcoal text-white', closed: 'bg-gray-200',
+};
+
+function Skeleton({ className }: { className: string }) {
+    return <div className={`animate-pulse bg-black/10 rounded-lg ${className}`} />;
+}
 
 export default function TicketDetail() {
+    const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
     const [newComment, setNewComment] = useState('');
-    const [comments, setComments] = useState(initialComments);
     const [showAi, setShowAi] = useState(false);
-    const [status, setStatus] = useState(mockTicket.status);
     const [usedResponse, setUsedResponse] = useState(false);
     const [statusSaved, setStatusSaved] = useState(false);
 
+    const { data: ticket, isLoading: ticketLoading } = useQuery({
+        queryKey: ['ticket', id],
+        queryFn: () => ticketApi.getById(id!).then(r => r.data),
+        enabled: !!id,
+        retry: 1,
+    });
+
+    const { data: commentsData, isLoading: commentsLoading } = useQuery({
+        queryKey: ['ticket-comments', id],
+        queryFn: () => ticketApi.getComments(id!).then(r => r.data),
+        enabled: !!id,
+        retry: 1,
+    });
+
+    const { data: aiInsights, isLoading: aiLoading } = useQuery({
+        queryKey: ['ai-suggest', id, ticket?.subject],
+        queryFn: () => aiService.suggestResponse({
+            ticket_subject: ticket!.subject,
+            ticket_description: ticket!.description || '',
+        }).then(r => r.data),
+        enabled: showAi && !!ticket,
+        retry: 1,
+    });
+
+    const comments = commentsData?.content || commentsData || [];
+
+    const updateStatusMutation = useMutation({
+        mutationFn: (status: string) => ticketApi.updateStatus(id!, status),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['ticket', id] });
+            queryClient.invalidateQueries({ queryKey: ['tickets'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+            setStatusSaved(true);
+            setTimeout(() => setStatusSaved(false), 1500);
+        },
+    });
+
+    const addCommentMutation = useMutation({
+        mutationFn: (content: string) => ticketApi.addComment(id!, { content }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['ticket-comments', id] });
+            setNewComment('');
+        },
+    });
+
     const handleSendComment = () => {
         if (!newComment.trim()) return;
-        const comment = {
-            id: String(Date.now()),
-            author: 'You (Agent)',
-            isCustomer: false,
-            content: newComment,
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        setComments([...comments, comment]);
-        setNewComment('');
+        addCommentMutation.mutate(newComment);
     };
 
     const handleUseResponse = () => {
-        setNewComment(aiSuggestion.response);
-        setUsedResponse(true);
-        setTimeout(() => setUsedResponse(false), 2000);
+        if (aiInsights?.suggested_response) {
+            setNewComment(aiInsights.suggested_response);
+            setUsedResponse(true);
+            setTimeout(() => setUsedResponse(false), 2000);
+        }
     };
 
-    const handleStatusChange = (newStatus: string) => {
-        setStatus(newStatus);
-        setStatusSaved(true);
-        setTimeout(() => setStatusSaved(false), 1500);
-    };
+    if (ticketLoading) {
+        return (
+            <div className="max-w-7xl mx-auto space-y-4">
+                <Skeleton className="h-8 w-40" />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-2 space-y-4">
+                        <Skeleton className="h-40 w-full" />
+                        <Skeleton className="h-80 w-full" />
+                    </div>
+                    <Skeleton className="h-60 w-full" />
+                </div>
+            </div>
+        );
+    }
+
+    if (!ticket) {
+        return (
+            <div className="max-w-7xl mx-auto text-center py-20">
+                <p className="font-heading font-bold text-xl">Ticket not found</p>
+                <button onClick={() => navigate('/tickets')} className="nb-btn nb-btn-yellow mt-4">Back to tickets</button>
+            </div>
+        );
+    }
+
+    const currentStatus = (ticket.status || 'open').toLowerCase();
+    const priority = (ticket.priority || 'medium').toLowerCase();
 
     return (
         <div className="max-w-7xl mx-auto">
@@ -73,54 +121,64 @@ export default function TicketDetail() {
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="nb-card-lg p-6">
                         <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
-                                <div className={`w-3 h-3 rounded-sm border-2 border-black ${statusBg[status]}`} />
-                                <select value={status} onChange={e => handleStatusChange(e.target.value)}
+                                <div className={`w-3 h-3 rounded-sm border-2 border-black ${statusBg[currentStatus] || 'bg-white'}`} />
+                                <select value={currentStatus}
+                                    onChange={e => updateStatusMutation.mutate(e.target.value)}
                                     className="px-3 py-1 text-xs font-heading font-bold rounded-lg border-2 border-black bg-white capitalize">
                                     {statusOpts.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
                                 </select>
                                 {statusSaved && <span className="text-xs font-heading font-bold text-green-700 flex items-center gap-1"><Check className="w-3 h-3" /> Saved</span>}
-                                <span className="nb-badge bg-orange-200 border-orange-400">
-                                    {mockTicket.priority.toUpperCase()}
-                                </span>
+                                <span className="nb-badge bg-orange-200 border-orange-400">{priority.toUpperCase()}</span>
                             </div>
                             <button onClick={() => setShowAi(!showAi)}
                                 className={`nb-btn-sm nb-btn ${showAi ? '' : 'nb-btn-yellow'}`}>
                                 <Sparkles className="w-3.5 h-3.5" /> AI Assist
                             </button>
                         </div>
-                        <h1 className="font-heading text-2xl font-extrabold tracking-tighter mb-2">{mockTicket.subject}</h1>
-                        <p className="text-sm font-body leading-relaxed text-muted-foreground">{mockTicket.description}</p>
+                        <h1 className="font-heading text-2xl font-extrabold tracking-tighter mb-2">{ticket.subject}</h1>
+                        <p className="text-sm font-body leading-relaxed text-muted-foreground">{ticket.description}</p>
                     </motion.div>
 
                     {/* Conversation */}
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="nb-card-lg p-6">
                         <h3 className="font-heading font-extrabold flex items-center gap-2 mb-4">
-                            <MessageSquare className="w-4 h-4" /> Conversation ({comments.length})
+                            <MessageSquare className="w-4 h-4" /> Conversation ({commentsLoading ? '…' : comments.length})
                         </h3>
                         <div className="space-y-3 mb-4 max-h-[400px] overflow-y-auto">
-                            {comments.map(c => (
-                                <motion.div key={c.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
-                                    className={`flex gap-3 ${c.isCustomer ? '' : 'flex-row-reverse'}`}>
-                                    <div className={`w-8 h-8 rounded-lg border-2 border-black flex items-center justify-center text-xs font-bold flex-shrink-0 ${c.isCustomer ? 'bg-nb-sage' : 'bg-nb-charcoal text-nb-yellow'}`}>
-                                        {c.author.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                                    </div>
-                                    <div className={`max-w-[75%] ${c.isCustomer ? '' : 'text-right'}`}>
-                                        <div className={`inline-block rounded-xl px-4 py-3 text-sm font-body border-2 border-black whitespace-pre-wrap ${c.isCustomer ? 'bg-white rounded-tl-none shadow-nb-sm' : 'bg-nb-yellow rounded-tr-none shadow-nb-sm'}`}>
-                                            {c.content}
-                                        </div>
-                                        <p className="text-xs font-body text-muted-foreground mt-1">{c.author} · {c.time}</p>
-                                    </div>
-                                </motion.div>
-                            ))}
+                            {commentsLoading ? (
+                                [...Array(3)].map((_, i) => <Skeleton key={i} className="h-16 w-full" />)
+                            ) : comments.length === 0 ? (
+                                <p className="text-sm font-body text-muted-foreground text-center py-6">No messages yet — start the conversation</p>
+                            ) : (
+                                comments.map((c: any) => {
+                                    const isCustomer = c.isCustomer ?? c.authorRole === 'CUSTOMER';
+                                    const authorName = c.author || c.authorName || 'Unknown';
+                                    const time = c.time || (c.createdAt ? new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '');
+                                    return (
+                                        <motion.div key={c.id} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }}
+                                            className={`flex gap-3 ${isCustomer ? '' : 'flex-row-reverse'}`}>
+                                            <div className={`w-8 h-8 rounded-lg border-2 border-black flex items-center justify-center text-xs font-bold flex-shrink-0 ${isCustomer ? 'bg-nb-sage' : 'bg-nb-charcoal text-nb-yellow'}`}>
+                                                {authorName.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                                            </div>
+                                            <div className={`max-w-[75%] ${isCustomer ? '' : 'text-right'}`}>
+                                                <div className={`inline-block rounded-xl px-4 py-3 text-sm font-body border-2 border-black whitespace-pre-wrap ${isCustomer ? 'bg-white rounded-tl-none shadow-nb-sm' : 'bg-nb-yellow rounded-tr-none shadow-nb-sm'}`}>
+                                                    {c.content}
+                                                </div>
+                                                <p className="text-xs font-body text-muted-foreground mt-1">{authorName} · {time}</p>
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })
+                            )}
                         </div>
                         <div className="flex gap-2 pt-4 border-t-2 border-black">
                             <input type="text" value={newComment} onChange={e => setNewComment(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSendComment(); } }}
                                 placeholder="Type your reply..." className="nb-input flex-1" />
                             <button onClick={handleSendComment}
-                                disabled={!newComment.trim()}
+                                disabled={!newComment.trim() || addCommentMutation.isPending}
                                 className="nb-btn nb-btn-yellow disabled:opacity-40 disabled:cursor-not-allowed">
-                                <Send className="w-4 h-4" />
+                                {addCommentMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                             </button>
                         </div>
                     </motion.div>
@@ -132,11 +190,11 @@ export default function TicketDetail() {
                         <h3 className="font-heading font-extrabold mb-4">Details</h3>
                         <div className="space-y-3">
                             {[
-                                { icon: User, label: 'Customer', value: mockTicket.customer.name },
-                                { icon: Tag, label: 'Category', value: mockTicket.category },
-                                { icon: User, label: 'Assigned', value: mockTicket.assignedTo.name },
-                                { icon: Clock, label: 'Created', value: new Date(mockTicket.created).toLocaleDateString() },
-                                { icon: AlertTriangle, label: 'SLA Deadline', value: new Date(mockTicket.slaDeadline).toLocaleDateString() },
+                                { icon: User, label: 'Customer', value: ticket.customerName || ticket.customer?.name || '—' },
+                                { icon: Tag, label: 'Category', value: ticket.category || '—' },
+                                { icon: User, label: 'Assigned', value: ticket.assignedToName || ticket.assignedTo?.name || 'Unassigned' },
+                                { icon: Clock, label: 'Created', value: ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : '—' },
+                                { icon: AlertTriangle, label: 'SLA Deadline', value: ticket.slaDeadline ? new Date(ticket.slaDeadline).toLocaleDateString() : 'Not set' },
                             ].map(item => (
                                 <div key={item.label} className="flex items-center gap-3 p-2 rounded-lg border-2 border-black/10 bg-nb-sage/10">
                                     <item.icon className="w-4 h-4" />
@@ -156,30 +214,26 @@ export default function TicketDetail() {
                                 <h3 className="font-heading font-extrabold flex items-center gap-2 mb-3">
                                     <Sparkles className="w-4 h-4" /> AI Insights
                                 </h3>
-                                <div className="space-y-3">
-                                    <div className="p-3 rounded-xl bg-white border-2 border-black">
-                                        <p className="text-[10px] font-heading font-bold uppercase mb-1">Sentiment</p>
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex-1 h-3 rounded-lg bg-nb-sage/30 border-2 border-black overflow-hidden">
-                                                <div className="h-full bg-red-500 rounded-lg" style={{ width: '80%' }} />
+                                {aiLoading ? (
+                                    <div className="flex items-center gap-2 text-sm font-body">
+                                        <Loader2 className="w-4 h-4 animate-spin" /> Analyzing with AI…
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {aiInsights?.suggested_response && (
+                                            <div className="p-3 rounded-xl bg-white border-2 border-black">
+                                                <p className="text-[10px] font-heading font-bold uppercase mb-2">Suggested Response</p>
+                                                <p className="text-xs font-body whitespace-pre-line leading-relaxed">{aiInsights.suggested_response}</p>
+                                                <button onClick={handleUseResponse} className="nb-btn-sm nb-btn nb-btn-yellow mt-2">
+                                                    {usedResponse ? <><Check className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Use Response</>}
+                                                </button>
                                             </div>
-                                            <span className="text-xs font-heading font-bold text-red-600">{aiSuggestion.sentiment}</span>
-                                        </div>
+                                        )}
+                                        {!aiInsights && (
+                                            <p className="text-xs font-body">AI service unavailable. Start the Python service to enable AI insights.</p>
+                                        )}
                                     </div>
-                                    <div className="p-3 rounded-xl bg-white border-2 border-black">
-                                        <p className="text-[10px] font-heading font-bold uppercase mb-1">Category</p>
-                                        <p className="text-sm font-heading font-bold">{aiSuggestion.category} ({Math.round(aiSuggestion.confidence * 100)}%)</p>
-                                    </div>
-                                    <div className="p-3 rounded-xl bg-white border-2 border-black">
-                                        <p className="text-[10px] font-heading font-bold uppercase mb-2">Suggested Response</p>
-                                        <p className="text-xs font-body whitespace-pre-line leading-relaxed">{aiSuggestion.response}</p>
-                                        <div className="flex gap-2 mt-2">
-                                            <button onClick={handleUseResponse} className="nb-btn-sm nb-btn nb-btn-yellow">
-                                                {usedResponse ? <><Check className="w-3 h-3" /> Copied!</> : <><Copy className="w-3 h-3" /> Use Response</>}
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                                )}
                             </motion.div>
                         )}
                     </AnimatePresence>

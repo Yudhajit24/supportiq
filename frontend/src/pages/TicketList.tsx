@@ -1,18 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, Filter, Plus, ChevronDown, ArrowUpDown, Clock, AlertCircle, CheckCircle2, Loader2, X, Send } from 'lucide-react';
-
-const initialTickets = Array.from({ length: 50 }, (_, i) => ({
-    id: `ticket-${i + 1}`,
-    subject: ['Cannot login to dashboard', 'Billing discrepancy', 'Feature: Dark mode', 'App crashes on upload', 'Password reset help', 'API rate limit', 'Payment failed', 'Export to CSV', 'Chart not rendering', 'Pricing inquiry', 'SSL expired', 'Refund request', 'Webhook support', 'Data loss', 'Setup help', 'Slow page load', 'Invoice missing', 'Slack integration', '2FA not working', 'Account deletion'][i % 20],
-    status: ['open', 'in_progress', 'pending', 'resolved', 'closed'][i % 5] as string,
-    priority: ['low', 'medium', 'high', 'urgent'][i % 4] as string,
-    category: ['Technical', 'Billing', 'Feature Request', 'Bug Report', 'General'][i % 5],
-    customer: ['John Doe', 'Jane Smith', 'Bob Jones', 'Alice Brown', 'Charlie Wilson'][i % 5],
-    assignedTo: ['Mike Johnson', 'Emily Davis', 'Alex Rivera', 'Jane Smith', 'Unassigned'][i % 5],
-    created: new Date(Date.now() - Math.random() * 30 * 86400000).toLocaleDateString(),
-}));
+import { ticketApi } from '../lib/api';
 
 const statusCfg: Record<string, { icon: any; bg: string }> = {
     open: { icon: AlertCircle, bg: 'bg-white' },
@@ -21,12 +12,15 @@ const statusCfg: Record<string, { icon: any; bg: string }> = {
     resolved: { icon: CheckCircle2, bg: 'bg-nb-charcoal text-white' },
     closed: { icon: CheckCircle2, bg: 'bg-gray-200' },
 };
-
 const prioColor: Record<string, string> = { low: 'bg-nb-sage', medium: 'bg-nb-yellow', high: 'bg-orange-400', urgent: 'bg-red-500' };
+
+function Skeleton({ className }: { className: string }) {
+    return <div className={`animate-pulse bg-black/10 rounded-lg ${className}`} />;
+}
 
 export default function TicketList() {
     const navigate = useNavigate();
-    const [tickets, setTickets] = useState(initialTickets);
+    const queryClient = useQueryClient();
     const [search, setSearch] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [priorityFilter, setPriorityFilter] = useState('');
@@ -34,36 +28,43 @@ export default function TicketList() {
     const [showCreate, setShowCreate] = useState(false);
     const [newTicket, setNewTicket] = useState({ subject: '', description: '', priority: 'medium', category: 'Technical' });
 
+    const { data, isLoading, isError } = useQuery({
+        queryKey: ['tickets', statusFilter, priorityFilter, search],
+        queryFn: () => ticketApi.getAll({
+            ...(statusFilter && { status: statusFilter }),
+            ...(priorityFilter && { priority: priorityFilter }),
+            ...(search && { q: search }),
+            size: '50',
+        }).then(r => r.data),
+        retry: 1,
+    });
+
+    const tickets = data?.content || data || [];
+
+    const createMutation = useMutation({
+        mutationFn: (payload: any) => ticketApi.create(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tickets'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard-metrics'] });
+            queryClient.invalidateQueries({ queryKey: ['recent-tickets'] });
+            setNewTicket({ subject: '', description: '', priority: 'medium', category: 'Technical' });
+            setShowCreate(false);
+        },
+    });
+
     const handleCreate = () => {
         if (!newTicket.subject.trim()) return;
-        const ticket = {
-            id: `ticket-${Date.now()}`,
-            subject: newTicket.subject,
-            status: 'open',
-            priority: newTicket.priority,
-            category: newTicket.category,
-            customer: 'You',
-            assignedTo: 'Unassigned',
-            created: new Date().toLocaleDateString(),
-        };
-        setTickets([ticket, ...tickets]);
-        setNewTicket({ subject: '', description: '', priority: 'medium', category: 'Technical' });
-        setShowCreate(false);
+        createMutation.mutate(newTicket);
     };
-
-    const filtered = tickets.filter(t => {
-        if (search && !t.subject.toLowerCase().includes(search.toLowerCase())) return false;
-        if (statusFilter && t.status !== statusFilter) return false;
-        if (priorityFilter && t.priority !== priorityFilter) return false;
-        return true;
-    });
 
     return (
         <div className="space-y-4">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="font-heading text-3xl font-extrabold tracking-tighter">Tickets</h2>
-                    <p className="text-sm font-body text-muted-foreground">{filtered.length} tickets found</p>
+                    <p className="text-sm font-body text-muted-foreground">
+                        {isLoading ? 'Loading…' : `${tickets.length} tickets found`}
+                    </p>
                 </div>
                 <button onClick={() => setShowCreate(true)} className="nb-btn nb-btn-yellow shadow-nb-lg">
                     <Plus className="w-4 h-4" /> New Ticket
@@ -118,10 +119,18 @@ export default function TicketList() {
                                             </select>
                                         </div>
                                     </div>
-                                    <button onClick={handleCreate} disabled={!newTicket.subject.trim()}
+                                    <button onClick={handleCreate}
+                                        disabled={!newTicket.subject.trim() || createMutation.isPending}
                                         className="nb-btn nb-btn-yellow w-full justify-center shadow-nb-lg disabled:opacity-40 disabled:cursor-not-allowed">
-                                        <Send className="w-4 h-4" /> Create Ticket
+                                        {createMutation.isPending
+                                            ? <><Loader2 className="w-4 h-4 animate-spin" /> Creating…</>
+                                            : <><Send className="w-4 h-4" /> Create Ticket</>}
                                     </button>
+                                    {createMutation.isError && (
+                                        <p className="text-xs text-red-600 font-heading font-bold text-center">
+                                            Failed to create ticket. Make sure the backend is running.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </motion.div>
@@ -170,59 +179,72 @@ export default function TicketList() {
             )}
 
             <div className="nb-card-lg overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b-2 border-black bg-nb-sage/30">
-                                {['Subject', 'Status', 'Priority', 'Category', 'Customer', 'Assigned', 'Created'].map(h => (
-                                    <th key={h} className="px-4 py-3 text-left text-xs font-heading font-extrabold uppercase tracking-wider">
-                                        <button className="flex items-center gap-1 hover:text-nb-charcoal">
-                                            {h} <ArrowUpDown className="w-3 h-3" />
-                                        </button>
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map((ticket, i) => {
-                                const cfg = statusCfg[ticket.status];
-                                const Icon = cfg.icon;
-                                return (
-                                    <motion.tr key={ticket.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i * 0.02, 0.5) }}
-                                        onClick={() => navigate(`/tickets/${ticket.id}`)}
-                                        className="border-b-2 border-black/10 hover:bg-nb-yellow/30 cursor-pointer transition-colors group">
-                                        <td className="px-4 py-3">
-                                            <span className="text-sm font-heading font-bold group-hover:underline decoration-2 underline-offset-2">{ticket.subject}</span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <span className={`nb-badge ${cfg.bg}`}>
-                                                <Icon className="w-3 h-3" /> {ticket.status.replace('_', ' ')}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-2">
-                                                <div className={`w-3 h-3 rounded-sm border-2 border-black ${prioColor[ticket.priority]}`} />
-                                                <span className="text-xs font-heading font-bold capitalize">{ticket.priority}</span>
-                                            </div>
-                                        </td>
-                                        <td className="px-4 py-3 text-sm font-body">{ticket.category}</td>
-                                        <td className="px-4 py-3 text-sm font-heading font-bold">{ticket.customer}</td>
-                                        <td className="px-4 py-3 text-sm font-body text-muted-foreground">{ticket.assignedTo}</td>
-                                        <td className="px-4 py-3 text-xs font-body text-muted-foreground">{ticket.created}</td>
-                                    </motion.tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-                {filtered.length === 0 && (
+                {isLoading ? (
+                    <div className="p-6 space-y-3">
+                        {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+                    </div>
+                ) : isError ? (
                     <div className="p-12 text-center">
-                        <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
-                        <p className="font-heading font-bold">No tickets found</p>
+                        <AlertCircle className="w-8 h-8 mx-auto mb-3 text-red-500" />
+                        <p className="font-heading font-bold">Could not load tickets</p>
+                        <p className="text-xs font-body text-muted-foreground mt-1">Make sure the API gateway is running on port 8080</p>
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b-2 border-black bg-nb-sage/30">
+                                    {['Subject', 'Status', 'Priority', 'Category', 'Customer', 'Assigned', 'Created'].map(h => (
+                                        <th key={h} className="px-4 py-3 text-left text-xs font-heading font-extrabold uppercase tracking-wider">
+                                            <button className="flex items-center gap-1 hover:text-nb-charcoal">
+                                                {h} <ArrowUpDown className="w-3 h-3" />
+                                            </button>
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {tickets.map((ticket: any, i: number) => {
+                                    const statusKey = (ticket.status || 'open').toLowerCase();
+                                    const cfg = statusCfg[statusKey] || statusCfg.open;
+                                    const Icon = cfg.icon;
+                                    return (
+                                        <motion.tr key={ticket.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: Math.min(i * 0.02, 0.5) }}
+                                            onClick={() => navigate(`/tickets/${ticket.id}`)}
+                                            className="border-b-2 border-black/10 hover:bg-nb-yellow/30 cursor-pointer transition-colors group">
+                                            <td className="px-4 py-3">
+                                                <span className="text-sm font-heading font-bold group-hover:underline decoration-2 underline-offset-2">{ticket.subject}</span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <span className={`nb-badge ${cfg.bg}`}>
+                                                    <Icon className="w-3 h-3" /> {statusKey.replace('_', ' ')}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-3 h-3 rounded-sm border-2 border-black ${prioColor[(ticket.priority || 'medium').toLowerCase()] || 'bg-gray-300'}`} />
+                                                    <span className="text-xs font-heading font-bold capitalize">{(ticket.priority || '').toLowerCase()}</span>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-3 text-sm font-body">{ticket.category || '—'}</td>
+                                            <td className="px-4 py-3 text-sm font-heading font-bold">{ticket.customerName || ticket.customer?.name || '—'}</td>
+                                            <td className="px-4 py-3 text-sm font-body text-muted-foreground">{ticket.assignedToName || ticket.assignedTo?.name || 'Unassigned'}</td>
+                                            <td className="px-4 py-3 text-xs font-body text-muted-foreground">{ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString() : '—'}</td>
+                                        </motion.tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                        {tickets.length === 0 && (
+                            <div className="p-12 text-center">
+                                <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
+                                <p className="font-heading font-bold">No tickets found</p>
+                                <p className="text-xs font-body text-muted-foreground mt-1">Try adjusting your filters or create a new ticket</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
         </div>
     );
 }
-
