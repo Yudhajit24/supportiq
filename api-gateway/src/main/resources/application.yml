@@ -1,0 +1,40 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  datasource:
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:supportiq}
+    username: ${POSTGRES_USER:supportiq_user}
+    password: ${POSTGRES_PASSWORD:supportiq_pass}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+jwt:
+  secret: ${JWT_SECRET:supportiq-super-secret-jwt-key-change-in-production-2024}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+services:
+  ticket-service:
+    url: http://localhost:${TICKET_SERVICE_PORT:8081}
+  analytics-service:
+    url: http://localhost:${ANALYTICS_SERVICE_PORT:8082}
+  integration-service:
+    url: http://localhost:${INTEGRATION_SERVICE_PORT:8083}
+  ai-service:
+    url: http://localhost:${AI_SERVICE_PORT:8001}
+
+cors:
+  allowed-origins: http://localhost:5173,http://localhost:3000
+
+logging:
+  level:
+    com.supportiq: DEBUG
+    org.springframework.security: INFO

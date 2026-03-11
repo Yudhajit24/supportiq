@@ -1,0 +1,14 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: integration-service
+
+zendesk:
+  subdomain: ${ZENDESK_SUBDOMAIN:}
+  api-token: ${ZENDESK_API_TOKEN:}
+
+logging:
+  level:
+    com.supportiq: DEBUG

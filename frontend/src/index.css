@@ -1,0 +1,332 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+    --primary: 48 100% 74%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 160 15% 75%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 150 5% 40%;
+    --accent: 160 15% 75%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 0%;
+    --input: 0 0% 0%;
+    --ring: 48 100% 74%;
+    --radius: 0.75rem;
+
+    /* Neo-Brutalist palette */
+    --nb-yellow: #ffe17c;
+    --nb-charcoal: #171e19;
+    --nb-sage: #b7c6c2;
+    --nb-white: #ffffff;
+    --nb-black: #000000;
+    --nb-dark-gray: #272727;
+
+    /* Neo-Brutalist shadows */
+    --shadow-sm: 4px 4px 0px 0px #000000;
+    --shadow-md: 6px 6px 0px 0px #000000;
+    --shadow-lg: 8px 8px 0px 0px #000000;
+    --shadow-xl: 12px 12px 0px 0px #000000;
+  }
+
+  .dark {
+    --background: 156 17% 8%;
+    --foreground: 0 0% 100%;
+    --card: 156 14% 12%;
+    --card-foreground: 0 0% 100%;
+    --primary: 48 100% 74%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 160 15% 75%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 156 10% 16%;
+    --muted-foreground: 160 8% 60%;
+    --accent: 160 15% 75%;
+    --accent-foreground: 0 0% 0%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 30%;
+    --input: 0 0% 30%;
+    --ring: 48 100% 74%;
+  }
+}
+
+@layer base {
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--nb-yellow);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--nb-black);
+  border: 2px solid var(--nb-yellow);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--nb-charcoal);
+}
+
+/* ====== NEO-BRUTALIST UTILITIES ====== */
+
+/* Hard shadow cards */
+.nb-card {
+  background: var(--nb-white);
+  border: 2px solid var(--nb-black);
+  box-shadow: var(--shadow-sm);
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.nb-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-md);
+}
+
+.nb-card-lg {
+  background: var(--nb-white);
+  border: 2px solid var(--nb-black);
+  box-shadow: var(--shadow-lg);
+  border-radius: 12px;
+}
+
+/* Push button effect */
+.nb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--nb-black);
+  color: var(--nb-white);
+  border: 2px solid var(--nb-black);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.nb-btn:hover {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+
+.nb-btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: none;
+}
+
+.nb-btn-yellow {
+  background: var(--nb-yellow);
+  color: var(--nb-black);
+}
+
+.nb-btn-white {
+  background: var(--nb-white);
+  color: var(--nb-black);
+}
+
+.nb-btn-sage {
+  background: var(--nb-sage);
+  color: var(--nb-black);
+}
+
+.nb-btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.75rem;
+  box-shadow: 2px 2px 0px 0px #000000;
+}
+
+.nb-btn-sm:hover {
+  transform: translate(2px, 2px);
+}
+
+/* Dot pattern overlay */
+.dot-pattern {
+  background-image: radial-gradient(circle, #000 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: 0.06;
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Yellow background sections */
+.bg-nb-yellow {
+  background-color: var(--nb-yellow);
+}
+
+.bg-nb-charcoal {
+  background-color: var(--nb-charcoal);
+}
+
+.bg-nb-sage {
+  background-color: var(--nb-sage);
+}
+
+.bg-nb-white {
+  background-color: var(--nb-white);
+}
+
+.bg-nb-dark {
+  background-color: var(--nb-dark-gray);
+}
+
+.text-nb-yellow {
+  color: var(--nb-yellow);
+}
+
+.text-nb-charcoal {
+  color: var(--nb-charcoal);
+}
+
+.text-nb-sage {
+  color: var(--nb-sage);
+}
+
+/* Icon box */
+.nb-icon-box {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--nb-black);
+  border-radius: 12px;
+  background: var(--nb-sage);
+  transition: all 0.2s ease;
+}
+
+.nb-icon-box:hover,
+.group:hover .nb-icon-box {
+  background: var(--nb-yellow);
+}
+
+/* Status badges */
+.nb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border: 2px solid var(--nb-black);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Input fields */
+.nb-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--nb-black);
+  border-radius: 12px;
+  background: var(--nb-white);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.875rem;
+  transition: all 0.15s ease;
+  box-shadow: 2px 2px 0px 0px #000000;
+}
+
+.nb-input:focus {
+  outline: none;
+  box-shadow: var(--shadow-sm);
+  transform: translate(-2px, -2px);
+}
+
+/* Marquee */
+@keyframes marquee-scroll {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee-scroll 25s linear infinite;
+}
+
+/* Asymmetric card corners for testimonials */
+.nb-asym-card {
+  border-top-right-radius: 24px;
+  border-bottom-left-radius: 24px;
+  border-top-left-radius: 2px;
+  border-bottom-right-radius: 2px;
+}
+
+/* Skeleton loading */
+.skeleton {
+  @apply animate-pulse rounded;
+  background: var(--nb-sage);
+  opacity: 0.3;
+}
+
+/* Legacy gradient compat mapped to neo-brut */
+.gradient-primary {
+  background: var(--nb-black);
+}
+
+.gradient-success {
+  background: var(--nb-sage);
+}
+
+.gradient-warning {
+  background: var(--nb-yellow);
+}
+
+.gradient-danger {
+  background: #ef4444;
+}
+
+.gradient-info {
+  background: var(--nb-sage);
+}
+
+/* Hover card */
+.hover-card {
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.hover-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-md);
+}
