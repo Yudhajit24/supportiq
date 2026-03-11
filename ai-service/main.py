@@ -27,7 +27,7 @@ try:
     api_key = os.getenv("GEMINI_API_KEY", "")
     if api_key and api_key != "your_gemini_api_key_here":
         llm = ChatGoogleGenerativeAI(
-            model="gemini-pro",
+            model="gemini-1.5-flash",
             google_api_key=api_key,
             temperature=0.3
         )
@@ -69,8 +69,8 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:8080"],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -492,6 +492,34 @@ Return ONLY a JSON object:
             explanation="Showing most recent tickets (configure GEMINI_API_KEY for natural language queries)",
             results=[]
         )
+
+
+class ChatRequest(BaseModel):
+    message: str
+
+class ChatResponse(BaseModel):
+    reply: str
+    type: str
+    sql: Optional[str] = None
+
+@app.post("/ai/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest):
+    """Unified chat endpoint — routes to KB or NL SQL based on intent."""
+    q = request.message.lower()
+    kb_keywords = ["how", "what is", "explain", "procedure", "process", "policy",
+                   "password", "reset", "billing", "refund", "cancel", "sla",
+                   "setup", "configure", "help me", "trending", "performance", "agent"]
+    
+    if any(k in q for k in kb_keywords):
+        # Route to KB / Gemini general answer
+        kb_req = KBSearchRequest(query=request.message)
+        result = await search_knowledge_base(kb_req)
+        return ChatResponse(reply=result.answer, type="kb")
+    else:
+        # Route to NL-to-SQL
+        nl_req = NLQueryRequest(query=request.message)
+        result = await natural_language_query(nl_req)
+        return ChatResponse(reply=result.explanation, type="sql", sql=result.sql)
 
 
 if __name__ == "__main__":
