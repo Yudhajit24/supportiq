@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../App';
 import {
     LayoutDashboard, Ticket, BarChart3, Bot, Settings, LogOut,
-    Menu, X, Zap, ChevronLeft, Sun, Moon, Bell
+    Menu, X, Zap, Sun, Moon, Bell
 } from 'lucide-react';
 
 const navItems = [
@@ -18,7 +18,7 @@ const navItems = [
 export default function Layout() {
     const { user, logout, isDark, toggleDark } = useAuth();
     const navigate = useNavigate();
-    const [collapsed, setCollapsed] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
 
     const handleLogout = () => {
         logout();
@@ -26,35 +26,57 @@ export default function Layout() {
     };
 
     return (
-        <div className="min-h-screen bg-nb-yellow">
+        <div className="min-h-screen" style={{ background: 'var(--cream)' }}>
+
             {/* Top Navigation Bar */}
-            <header className="fixed top-0 inset-x-0 h-16 bg-nb-yellow border-b-2 border-black z-50 flex items-center px-4">
+            <header className="fixed top-0 inset-x-0 h-16 z-50 flex items-center px-5"
+                style={{
+                    background: 'rgba(254,250,224,0.85)',
+                    backdropFilter: 'blur(20px)',
+                    borderBottom: '1px solid rgba(163,177,138,0.3)',
+                    boxShadow: '0 2px 16px rgba(1,71,46,0.07)',
+                }}>
+
                 {/* Left: Logo */}
                 <div className="flex items-center gap-3">
-                    <button onClick={() => setCollapsed(!collapsed)} className="p-2 hover:bg-black/5 rounded-lg transition-colors lg:hidden">
-                        {collapsed ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    <button onClick={() => setMobileOpen(!mobileOpen)}
+                        className="p-2 rounded-xl transition-colors lg:hidden hover:bg-nb-yellow">
+                        {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
-                    <div className="w-10 h-10 bg-nb-charcoal rounded-xl border-2 border-black flex items-center justify-center shadow-nb-sm">
-                        <Zap className="w-5 h-5 text-nb-yellow" />
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-nb-sm"
+                        style={{ background: 'var(--forest)' }}>
+                        <Zap className="w-4 h-4" style={{ color: 'var(--sage)' }} />
                     </div>
-                    <span className="font-heading text-xl font-extrabold tracking-tighter hidden sm:block">SupportIQ</span>
+                    <span className="font-heading text-xl font-bold tracking-tight hidden sm:block"
+                        style={{ color: 'var(--forest)' }}>
+                        SupportIQ
+                    </span>
                 </div>
 
-                {/* Center: Nav links (desktop) */}
-                <nav className="hidden lg:flex items-center gap-1 ml-12">
+                {/* Center: Nav pill (desktop) */}
+                <nav className="hidden lg:flex items-center gap-0.5 ml-10 px-2 py-1.5 rounded-full"
+                    style={{
+                        background: 'rgba(204,213,174,0.3)',
+                        backdropFilter: 'blur(10px)',
+                        border: '1px solid rgba(163,177,138,0.4)',
+                    }}>
                     {navItems.map(item => (
                         <NavLink
                             key={item.to}
                             to={item.to}
                             end={item.to === '/'}
                             className={({ isActive }) =>
-                                `flex items-center gap-2 px-4 py-2 text-sm font-heading font-bold rounded-xl border-2 transition-all ${isActive
-                                    ? 'bg-nb-charcoal text-white border-black shadow-nb-sm'
-                                    : 'border-transparent hover:border-black hover:bg-white hover:shadow-nb-sm'
+                                `flex items-center gap-2 px-4 py-1.5 text-xs font-body font-semibold rounded-full transition-all duration-300 uppercase tracking-wider ${isActive
+                                    ? 'shadow-nb-sm text-cream'
+                                    : 'hover:bg-white/60'
                                 }`
                             }
+                            style={({ isActive }) => isActive
+                                ? { background: 'var(--forest)', color: 'var(--cream)' }
+                                : { color: 'var(--forest)' }
+                            }
                         >
-                            <item.icon className="w-4 h-4" />
+                            <item.icon className="w-3.5 h-3.5" />
                             {item.label}
                         </NavLink>
                     ))}
@@ -63,21 +85,26 @@ export default function Layout() {
                 {/* Right */}
                 <div className="ml-auto flex items-center gap-2">
                     <button onClick={toggleDark}
-                        className="w-10 h-10 rounded-xl border-2 border-black bg-white flex items-center justify-center hover:bg-nb-sage transition-colors shadow-nb-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none">
+                        className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-nb-yellow"
+                        style={{ border: '1px solid rgba(163,177,138,0.5)', color: 'var(--forest)' }}>
                         {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                     </button>
-                    <button className="w-10 h-10 rounded-xl border-2 border-black bg-white flex items-center justify-center hover:bg-nb-sage transition-colors shadow-nb-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none relative">
+                    <button className="w-9 h-9 rounded-full flex items-center justify-center transition-all hover:bg-nb-yellow relative"
+                        style={{ border: '1px solid rgba(163,177,138,0.5)', color: 'var(--forest)' }}>
                         <Bell className="w-4 h-4" />
-                        <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-black" />
+                        <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-cream" />
                     </button>
-                    <div className="hidden sm:flex items-center gap-2 ml-2 px-3 py-1.5 rounded-xl border-2 border-black bg-white shadow-nb-sm">
-                        <div className="w-7 h-7 bg-nb-charcoal rounded-lg flex items-center justify-center text-nb-yellow text-xs font-bold border border-black">
+                    <div className="hidden sm:flex items-center gap-2 ml-1 px-3 py-1.5 rounded-full"
+                        style={{ background: 'rgba(204,213,174,0.35)', border: '1px solid rgba(163,177,138,0.4)' }}>
+                        <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                            style={{ background: 'var(--forest)', color: 'var(--sage)' }}>
                             {user?.fullName?.charAt(0) || 'D'}
                         </div>
-                        <span className="text-sm font-heading font-bold">{user?.fullName?.split(' ')[0] || 'Demo'}</span>
+                        <span className="text-sm font-body font-semibold" style={{ color: 'var(--forest)' }}>
+                            {user?.fullName?.split(' ')[0] || 'Demo'}
+                        </span>
                     </div>
-                    <button onClick={handleLogout}
-                        className="nb-btn-sm nb-btn nb-btn-white">
+                    <button onClick={handleLogout} className="nb-btn nb-btn-sm nb-btn-white">
                         <LogOut className="w-3.5 h-3.5" />
                     </button>
                 </div>
@@ -85,33 +112,26 @@ export default function Layout() {
 
             {/* Mobile sidebar */}
             <AnimatePresence>
-                {collapsed && (
+                {mobileOpen && (
                     <>
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setCollapsed(false)}
-                            className="fixed inset-0 bg-black/40 z-40 lg:hidden"
-                        />
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            onClick={() => setMobileOpen(false)}
+                            className="fixed inset-0 bg-black/30 z-40 lg:hidden backdrop-blur-sm" />
                         <motion.nav
-                            initial={{ x: -280 }}
-                            animate={{ x: 0 }}
-                            exit={{ x: -280 }}
-                            className="fixed left-0 top-16 bottom-0 w-64 bg-nb-yellow border-r-2 border-black z-40 p-4 lg:hidden"
-                        >
+                            initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }}
+                            transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+                            className="fixed left-0 top-16 bottom-0 w-64 z-40 p-4 lg:hidden"
+                            style={{ background: 'var(--cream)', borderRight: '1px solid rgba(163,177,138,0.4)' }}>
                             <div className="space-y-1">
                                 {navItems.map(item => (
-                                    <NavLink
-                                        key={item.to}
-                                        to={item.to}
-                                        end={item.to === '/'}
-                                        onClick={() => setCollapsed(false)}
+                                    <NavLink key={item.to} to={item.to} end={item.to === '/'}
+                                        onClick={() => setMobileOpen(false)}
                                         className={({ isActive }) =>
-                                            `flex items-center gap-3 px-4 py-3 font-heading font-bold text-sm rounded-xl border-2 transition-all ${isActive
-                                                ? 'bg-nb-charcoal text-white border-black shadow-nb-sm'
-                                                : 'border-transparent hover:border-black hover:bg-white'
-                                            }`
+                                            `flex items-center gap-3 px-4 py-3 font-body font-semibold text-sm rounded-xl transition-all ${isActive ? 'text-cream' : ''}`
+                                        }
+                                        style={({ isActive }) => isActive
+                                            ? { background: 'var(--forest)', color: 'var(--cream)' }
+                                            : { color: 'var(--forest)' }
                                         }
                                     >
                                         <item.icon className="w-5 h-5" />
@@ -130,10 +150,10 @@ export default function Layout() {
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={location.pathname}
-                            initial={{ opacity: 0, y: 10 }}
+                            initial={{ opacity: 0, y: 14 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                         >
                             <Outlet />
                         </motion.div>

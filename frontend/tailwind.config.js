@@ -34,16 +34,19 @@ export default {
                     DEFAULT: 'hsl(var(--card))',
                     foreground: 'hsl(var(--card-foreground))',
                 },
+                // Forest & Sage palette
                 nb: {
-                    yellow: '#ffe17c',
-                    charcoal: '#171e19',
-                    sage: '#b7c6c2',
-                    dark: '#272727',
+                    yellow:   '#ccd5ae',  // → Sage (replaces yellow)
+                    charcoal: '#01472e',  // → Forest (replaces charcoal)
+                    sage:     '#a3b18a',  // → Moss
+                    dark:     '#01472e',  // → Forest
+                    cream:    '#fefae0',  // new
+                    olive:    '#e9edc9',  // new
                 },
             },
             fontFamily: {
                 heading: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
-                body: ['"DM Sans"', 'system-ui', 'sans-serif'],
+                body:    ['"Inter"', 'system-ui', 'sans-serif'],
             },
             borderRadius: {
                 lg: 'var(--radius)',
@@ -51,32 +54,28 @@ export default {
                 sm: 'calc(var(--radius) - 4px)',
             },
             boxShadow: {
-                'nb-sm': '4px 4px 0px 0px #000000',
-                'nb-md': '6px 6px 0px 0px #000000',
-                'nb-lg': '8px 8px 0px 0px #000000',
-                'nb-xl': '12px 12px 0px 0px #000000',
-                'nb-none': 'none',
+                // Forest-tinted soft shadows
+                'nb-sm':  '0 4px 16px 0 rgba(1,71,46,0.12)',
+                'nb-md':  '0 8px 24px 0 rgba(1,71,46,0.16)',
+                'nb-lg':  '0 12px 40px 0 rgba(1,71,46,0.20)',
+                'nb-xl':  '0 20px 60px 0 rgba(1,71,46,0.25)',
+                'nb-none':'none',
             },
             keyframes: {
                 'fade-in': {
-                    '0%': { opacity: '0', transform: 'translateY(10px)' },
+                    '0%':   { opacity: '0', transform: 'translateY(10px)' },
                     '100%': { opacity: '1', transform: 'translateY(0)' },
                 },
                 'slide-in-right': {
-                    '0%': { transform: 'translateX(100%)' },
+                    '0%':   { transform: 'translateX(100%)' },
                     '100%': { transform: 'translateX(0)' },
                 },
                 'slide-up': {
-                    '0%': { transform: 'translateY(100%)', opacity: '0' },
+                    '0%':   { transform: 'translateY(100%)', opacity: '0' },
                     '100%': { transform: 'translateY(0)', opacity: '1' },
                 },
-                'count-up': {
-                    '0%': { opacity: '0', transform: 'scale(0.5)' },
-                    '50%': { opacity: '1' },
-                    '100%': { transform: 'scale(1)' },
-                },
                 shimmer: {
-                    '0%': { backgroundPosition: '-200% 0' },
+                    '0%':   { backgroundPosition: '-200% 0' },
                     '100%': { backgroundPosition: '200% 0' },
                 },
                 pulse: {
@@ -85,12 +84,11 @@ export default {
                 },
             },
             animation: {
-                'fade-in': 'fade-in 0.5s ease-out',
-                'slide-in-right': 'slide-in-right 0.3s ease-out',
-                'slide-up': 'slide-up 0.4s ease-out',
-                'count-up': 'count-up 0.6s ease-out',
-                shimmer: 'shimmer 2s infinite linear',
-                pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                'fade-in':       'fade-in 0.6s cubic-bezier(0.16,1,0.3,1)',
+                'slide-in-right':'slide-in-right 0.4s cubic-bezier(0.16,1,0.3,1)',
+                'slide-up':      'slide-up 0.5s cubic-bezier(0.16,1,0.3,1)',
+                shimmer:         'shimmer 2s infinite linear',
+                pulse:           'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite',
             },
         },
     },
