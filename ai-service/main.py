@@ -389,6 +389,10 @@ Return ONLY valid JSON: {{"sql": "SELECT ...", "explanation": "This query..."}}"
         return NLQueryResponse(
             sql="SELECT id, subject, status, resolved_at FROM tickets WHERE status = 'resolved' AND resolved_at >= NOW() - INTERVAL '7 days' ORDER BY resolved_at DESC",
             explanation="Shows tickets resolved in the last 7 days", results=[])
+    elif "agent" in query or "performance" in query:
+        return NLQueryResponse(
+            sql="SELECT assigned_to as agent_id, COUNT(id) as total_tickets, SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END) as resolved_tickets FROM tickets WHERE assigned_to IS NOT NULL GROUP BY assigned_to ORDER BY resolved_tickets DESC",
+            explanation="Agent performance metrics showing total vs resolved tickets per agent", results=[])
     return NLQueryResponse(
         sql="SELECT id, subject, status, priority, created_at FROM tickets ORDER BY created_at DESC LIMIT 20",
         explanation="Showing most recent tickets (set GEMINI_API_KEY for natural language queries)", results=[])
@@ -397,18 +401,31 @@ Return ONLY valid JSON: {{"sql": "SELECT ...", "explanation": "This query..."}}"
 @app.post("/ai/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     q = request.message.lower()
-    kb_keywords = ["how", "what is", "explain", "procedure", "process", "policy",
+    
+    # Data/SQL intent keywords
+    sql_keywords = ["how many", "count", "performance", "agent", "agents", "trending", 
+                    "metrics", "stats", "statistics", "average", "report", "show me tickets", 
+                    "list", "urgent", "resolved"]
+    
+    # KB intent keywords (more strict to avoid catching analytical 'how' questions)
+    kb_keywords = ["what is", "explain", "procedure", "process", "policy",
                    "password", "reset", "billing", "refund", "cancel", "sla",
-                   "setup", "configure", "help", "trending", "performance", "agent",
-                   "best practice", "guide", "documentation"]
-    if any(k in q for k in kb_keywords):
+                   "setup", "configure", "help", "best practice", "guide", "documentation"]
+                   
+    # Route to SQL if data keywords are present, otherwise KB if kb keywords present.
+    if any(k in q for k in sql_keywords):
+        nl_req = NLQueryRequest(query=request.message)
+        result = await natural_language_query(nl_req)
+        return ChatResponse(reply=result.explanation, type="sql", sql=result.sql)
+    elif any(k in q for k in kb_keywords):
         kb_req = KBSearchRequest(query=request.message)
         result = await search_knowledge_base(kb_req)
         return ChatResponse(reply=result.answer, type="kb")
     else:
-        nl_req = NLQueryRequest(query=request.message)
-        result = await natural_language_query(nl_req)
-        return ChatResponse(reply=result.explanation, type="sql", sql=result.sql)
+        # Default fallback to KB for conversational general questions
+        kb_req = KBSearchRequest(query=request.message)
+        result = await search_knowledge_base(kb_req)
+        return ChatResponse(reply=result.answer, type="kb")
 
 
 if __name__ == "__main__":
