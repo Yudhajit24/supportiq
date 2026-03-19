@@ -5,18 +5,19 @@ import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Toolti
 import { Download, Target, Users, Clock, TrendingUp, Check, Loader2 } from 'lucide-react';
 import { analyticsApi } from '../lib/api';
 
-const COLORS = ['#171e19', '#b7c6c2', '#ffe17c', '#272727', '#6b7280'];
+const COLORS = ['#2dd4bf', '#818cf8', '#fb7185', '#a78bfa', '#6b7280'];
 const tooltipStyle = {
-    background: '#fff',
-    border: '2px solid #000',
-    borderRadius: '12px',
-    boxShadow: '4px 4px 0px #000',
-    fontFamily: 'Space Grotesk',
-    fontSize: '12px'
+    background: 'var(--nm-bg)',
+    border: 'none',
+    borderRadius: '16px',
+    boxShadow: '6px 6px 12px var(--nm-shadow), -6px -6px 12px var(--nm-highlight)',
+    fontSize: '13px',
+    fontWeight: 'bold',
+    color: 'var(--foreground)'
 };
 
 function Skeleton({ className }: { className: string }) {
-    return <div className={`animate-pulse bg-black/10 rounded-lg ${className}`} />;
+    return <div className={`animate-pulse bg-muted rounded-xl ${className}`} />;
 }
 
 export default function Analytics() {
@@ -70,7 +71,6 @@ export default function Analytics() {
     }));
     const dash = dashRaw || {};
 
-    // Calculate resolution rate from available fields
     const resolutionRate = dash.totalTickets > 0
         ? Math.round((dash.resolvedTickets / dash.totalTickets) * 100)
         : 0;
@@ -94,82 +94,94 @@ export default function Analytics() {
     };
 
     const kpis = [
-        { label: 'Resolution Rate', value: dashLoading ? '…' : `${resolutionRate}%`, icon: Target, bg: 'bg-white' },
-        { label: 'Avg Resolution', value: dashLoading ? '…' : `${(dash.avgResolutionTimeHours ?? 0).toFixed(1)}h`, icon: Clock, bg: 'bg-nb-sage' },
-        { label: 'Avg CSAT', value: dashLoading ? '…' : `${(dash.avgCustomerSatisfaction ?? 0).toFixed(1)}/5`, icon: TrendingUp, bg: 'bg-nb-yellow' },
-        { label: 'Total Agents', value: dashLoading ? '…' : String(agentData.length || 0), icon: Users, bg: 'bg-nb-charcoal text-white' },
+        { label: 'Resolution Rate', value: dashLoading ? '…' : `${resolutionRate}%`, icon: Target, color: 'text-primary' },
+        { label: 'Avg Resolution', value: dashLoading ? '…' : `${(dash.avgResolutionTimeHours ?? 0).toFixed(1)}h`, icon: Clock, color: 'text-accent-sage' },
+        { label: 'Avg CSAT', value: dashLoading ? '…' : `${(dash.avgCustomerSatisfaction ?? 0).toFixed(1)}/5`, icon: TrendingUp, color: 'text-accent-emerald' },
+        { label: 'Total Agents', value: dashLoading ? '…' : String(agentData.length || 0), icon: Users, color: 'text-accent-indigo' },
     ];
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8 pb-10">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="font-heading text-3xl font-extrabold tracking-tighter">Analytics</h2>
-                    <p className="text-sm font-body text-muted-foreground">Support performance overview</p>
+                    <h2 className="text-3xl font-extrabold tracking-tight">Analytics</h2>
+                    <p className="text-sm font-medium text-muted-foreground mt-1">Support performance overview</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="flex gap-1">
+                <div className="flex items-center gap-4">
+                    <div className="flex gap-2 nm-inset p-1.5 rounded-full">
                         {['7d', '14d', '30d', '90d'].map(p => (
                             <button key={p} onClick={() => setPeriod(p)}
-                                className={`px-4 py-1.5 text-xs font-heading font-bold rounded-lg border-2 border-black transition-all ${period === p ? 'bg-nb-charcoal text-white shadow-nb-sm' : 'bg-white hover:bg-nb-yellow'}`}>
+                                className={`px-5 py-2 text-xs font-bold rounded-full transition-all ${period === p ? 'nm-flat text-primary' : 'text-muted-foreground hover:text-foreground'}`}>
                                 {p}
                             </button>
                         ))}
                     </div>
                     <button onClick={handleExport} disabled={exporting || trendData.length === 0}
-                        className="nb-btn nb-btn-white nb-btn-sm disabled:opacity-50">
-                        {exported ? <><Check className="w-4 h-4" /> Exported!</> : exporting ? <><Loader2 className="w-4 h-4 animate-spin" /> Exporting…</> : <><Download className="w-4 h-4" /> Export</>}
+                        className="nm-button flex items-center gap-2 px-6 py-3 font-bold text-sm text-foreground disabled:opacity-50 h-[42px]">
+                        {exported ? <><Check className="w-4 h-4 text-accent-emerald" /> Exported!</> : exporting ? <><Loader2 className="w-4 h-4 animate-spin text-primary" /> Exporting…</> : <><Download className="w-4 h-4" /> Export</>}
                     </button>
                 </div>
             </div>
 
             {/* KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {kpis.map((kpi, i) => (
                     <motion.div key={kpi.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-                        <div className={`nb-card p-5 ${kpi.bg}`}>
-                            <div className="flex items-center gap-2 mb-2">
-                                {dashLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <kpi.icon className="w-4 h-4" />}
-                                <span className="text-xs font-heading font-bold opacity-60">{kpi.label}</span>
+                        <div className="nm-flat p-6 rounded-[24px] group flex flex-col h-full bg-background/50">
+                            <div className="flex items-center gap-4 mb-6">
+                                <div className={`w-12 h-12 rounded-2xl nm-inset flex items-center justify-center animate-float ${kpi.color}`}>
+                                    {dashLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <kpi.icon className="w-5 h-5" />}
+                                </div>
+                                <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{kpi.label}</span>
                             </div>
-                            <p className="text-3xl font-heading font-extrabold tracking-tighter">{kpi.value}</p>
+                            <p className="text-4xl font-extrabold tracking-tight mt-auto">{kpi.value}</p>
                         </div>
                     </motion.div>
                 ))}
             </div>
 
             {/* Charts Row 1 */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="nb-card-lg p-6">
-                    <h3 className="font-heading font-extrabold mb-4">Ticket Volume</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="nm-flat p-8 rounded-[32px]">
+                    <h3 className="text-lg font-extrabold mb-8">Ticket Volume</h3>
                     {trendsLoading ? <Skeleton className="h-[280px]" /> : trendData.length === 0 ? (
-                        <div className="h-[280px] flex items-center justify-center text-sm font-body text-muted-foreground">No trend data yet</div>
+                        <div className="h-[280px] flex items-center justify-center text-sm font-medium text-muted-foreground">No trend data yet</div>
                     ) : (
                         <ResponsiveContainer width="100%" height={280}>
                             <AreaChart data={trendData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                                <XAxis dataKey="date" tick={{ fontSize: 10, fontFamily: 'Space Grotesk' }} tickFormatter={v => String(v).slice(5)} />
-                                <YAxis tick={{ fontSize: 10, fontFamily: 'Space Grotesk' }} />
+                                <defs>
+                                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.4}/>
+                                        <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
+                                    </linearGradient>
+                                    <linearGradient id="colorResolved" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="var(--accent-sage)" stopOpacity={0.4}/>
+                                        <stop offset="95%" stopColor="var(--accent-sage)" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                                <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} tickFormatter={v => String(v).slice(5)} axisLine={false} tickLine={false} dy={10} />
+                                <YAxis tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} dx={-10} />
                                 <Tooltip contentStyle={tooltipStyle} />
-                                <Area type="stepAfter" dataKey="total" name="Created" stroke="#171e19" fill="#ffe17c" strokeWidth={2} />
-                                <Area type="stepAfter" dataKey="resolved" name="Resolved" stroke="#b7c6c2" fill="#b7c6c2" strokeWidth={2} fillOpacity={0.4} />
+                                <Area type="monotone" dataKey="total" name="Created" stroke="var(--primary)" fill="url(#colorTotal)" strokeWidth={3} />
+                                <Area type="monotone" dataKey="resolved" name="Resolved" stroke="var(--accent-sage)" fill="url(#colorResolved)" strokeWidth={3} />
                             </AreaChart>
                         </ResponsiveContainer>
                     )}
                 </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="nb-card-lg p-6">
-                    <h3 className="font-heading font-extrabold mb-4">SLA Compliance</h3>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="nm-flat p-8 rounded-[32px]">
+                    <h3 className="text-lg font-extrabold mb-8">SLA Compliance</h3>
                     {slaLoading ? <Skeleton className="h-[280px]" /> : slaData.length === 0 ? (
-                        <div className="h-[280px] flex items-center justify-center text-sm font-body text-muted-foreground">No SLA data yet</div>
+                        <div className="h-[280px] flex items-center justify-center text-sm font-medium text-muted-foreground">No SLA data yet</div>
                     ) : (
                         <ResponsiveContainer width="100%" height={280}>
                             <BarChart data={slaData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                                <XAxis dataKey="priority" tick={{ fontSize: 11, fontFamily: 'Space Grotesk' }} />
-                                <YAxis tick={{ fontSize: 11, fontFamily: 'Space Grotesk' }} domain={[0, 100]} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                                <XAxis dataKey="priority" tick={{ fontSize: 11, fill: 'var(--muted-foreground)', textTransform: 'uppercase' }} axisLine={false} tickLine={false} dy={10} />
+                                <YAxis tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} domain={[0, 100]} axisLine={false} tickLine={false} dx={-10} />
                                 <Tooltip contentStyle={tooltipStyle} />
-                                <Bar dataKey="compliance" name="Compliance %" fill="#ffe17c" stroke="#000" strokeWidth={2} radius={[8, 8, 0, 0]} />
+                                <Bar dataKey="compliance" name="Compliance %" fill="var(--primary)" radius={[8, 8, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}
@@ -177,29 +189,29 @@ export default function Analytics() {
             </div>
 
             {/* Charts Row 2 */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="nb-card-lg p-6">
-                    <h3 className="font-heading font-extrabold mb-4">Category Split</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="nm-flat p-8 rounded-[32px]">
+                    <h3 className="text-lg font-extrabold mb-8">Category Split</h3>
                     {categoryLoading ? <Skeleton className="h-[260px]" /> : categoryData.length === 0 ? (
-                        <div className="h-[260px] flex items-center justify-center text-sm font-body text-muted-foreground">No category data yet</div>
+                        <div className="h-[260px] flex items-center justify-center text-sm font-medium text-muted-foreground">No category data yet</div>
                     ) : (
                         <>
                             <ResponsiveContainer width="100%" height={200}>
                                 <PieChart>
-                                    <Pie data={categoryData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="value" stroke="#000" strokeWidth={2}>
+                                    <Pie data={categoryData} cx="50%" cy="50%" innerRadius={60} outerRadius={90} paddingAngle={4} dataKey="value" stroke="var(--nm-bg)" strokeWidth={4}>
                                         {categoryData.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                                     </Pie>
                                     <Tooltip contentStyle={tooltipStyle} />
                                 </PieChart>
                             </ResponsiveContainer>
-                            <div className="space-y-1.5 mt-2">
+                            <div className="space-y-3 mt-6">
                                 {categoryData.map((c: any, i: number) => (
-                                    <div key={c.name} className="flex justify-between items-center text-xs">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-3 h-3 rounded-sm border-2 border-black" style={{ background: COLORS[i % COLORS.length] }} />
-                                            <span className="font-body font-medium">{c.name}</span>
+                                    <div key={c.name} className="flex justify-between items-center text-sm">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-3 h-3 rounded-full" style={{ background: COLORS[i % COLORS.length] }} />
+                                            <span className="font-semibold text-muted-foreground">{c.name}</span>
                                         </div>
-                                        <span className="font-heading font-bold">{c.value}</span>
+                                        <span className="font-extrabold">{c.value}</span>
                                     </div>
                                 ))}
                             </div>
@@ -207,18 +219,18 @@ export default function Analytics() {
                     )}
                 </motion.div>
 
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="lg:col-span-2 nb-card-lg p-6">
-                    <h3 className="font-heading font-extrabold mb-4">Agent Performance</h3>
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="lg:col-span-2 nm-flat p-8 rounded-[32px]">
+                    <h3 className="text-lg font-extrabold mb-8">Agent Performance</h3>
                     {agentsLoading ? <Skeleton className="h-[280px]" /> : agentData.length === 0 ? (
-                        <div className="h-[280px] flex items-center justify-center text-sm font-body text-muted-foreground">No agent data yet</div>
+                        <div className="h-[280px] flex items-center justify-center text-sm font-medium text-muted-foreground">No agent data yet</div>
                     ) : (
                         <ResponsiveContainer width="100%" height={280}>
                             <BarChart data={agentData} layout="vertical">
-                                <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
-                                <XAxis type="number" tick={{ fontSize: 10, fontFamily: 'Space Grotesk' }} />
-                                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fontFamily: 'Space Grotesk' }} width={70} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                                <XAxis type="number" tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} axisLine={false} tickLine={false} dy={10} />
+                                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} width={80} axisLine={false} tickLine={false} />
                                 <Tooltip contentStyle={tooltipStyle} />
-                                <Bar dataKey="resolved" name="Resolved" fill="#171e19" stroke="#000" strokeWidth={2} radius={[0, 8, 8, 0]} />
+                                <Bar dataKey="resolved" name="Resolved" fill="var(--accent-indigo)" radius={[0, 8, 8, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     )}

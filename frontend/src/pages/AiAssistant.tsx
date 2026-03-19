@@ -76,62 +76,62 @@ export default function AiAssistant() {
     };
 
     return (
-        <div className="h-[calc(100vh-8rem)] flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-nb-charcoal rounded-xl border-2 border-black flex items-center justify-center shadow-nb-sm">
-                        <Bot className="w-6 h-6 text-nb-yellow" />
+        <div className="h-[calc(100vh-8rem)] flex flex-col pb-6">
+            <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-full nm-inset flex items-center justify-center animate-float">
+                        <Bot className="w-7 h-7 text-primary" />
                     </div>
                     <div>
-                        <h2 className="font-heading text-2xl font-extrabold tracking-tighter">AI Assistant</h2>
-                        <p className="text-xs font-body text-muted-foreground flex items-center gap-1">
-                            <span className={`w-2 h-2 rounded-full border border-black ${gemini_available_indicator}`} />
+                        <h2 className="text-3xl font-extrabold tracking-tight">AI Assistant</h2>
+                        <p className="text-sm font-medium text-muted-foreground flex items-center gap-2 mt-1">
+                            <span className={`w-2.5 h-2.5 rounded-full ${gemini_available_indicator}`} />
                             Powered by Google Gemini 2.0 Flash
                         </p>
                     </div>
                 </div>
-                <button onClick={() => setMessages([messages[0]])} className="nb-btn nb-btn-sm nb-btn-white">
-                    <RefreshCw className="w-3.5 h-3.5" /> New Chat
+                <button onClick={() => setMessages([messages[0]])} className="nm-button flex items-center gap-2 px-5 py-2.5 font-bold text-sm">
+                    <RefreshCw className="w-4 h-4" /> New Chat
                 </button>
             </div>
 
             {messages.length <= 1 && (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                     {quickActions.map(a => (
-                        <button key={a.label} onClick={() => send(a.query)} className="nb-card p-4 text-left group">
-                            <span className="text-xl mb-1 block">{a.icon}</span>
-                            <span className="text-sm font-heading font-bold group-hover:underline decoration-2 underline-offset-2">{a.label}</span>
+                        <button key={a.label} onClick={() => send(a.query)} className="nm-flat p-5 text-left group hover:bg-background/60 transition-colors flex flex-col gap-3">
+                            <span className="text-2xl">{a.icon}</span>
+                            <span className="text-sm font-bold group-hover:text-primary transition-colors">{a.label}</span>
                         </button>
                     ))}
                 </div>
             )}
 
-            <div className="flex-1 overflow-y-auto nb-card-lg p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto nm-flat p-6 rounded-[32px] space-y-6 scrollbar-hide flex flex-col relative">
                 <AnimatePresence>
                     {messages.map(msg => (
-                        <motion.div key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                            className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                            <div className={`w-9 h-9 rounded-xl border-2 border-black flex items-center justify-center flex-shrink-0 ${msg.role === 'assistant' ? 'bg-nb-charcoal text-nb-yellow' : 'bg-nb-sage'}`}>
-                                {msg.role === 'assistant' ? <Sparkles className="w-4 h-4" /> : <User className="w-4 h-4" />}
+                        <motion.div key={msg.id} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
+                            className={`flex gap-4 w-full ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${msg.role === 'assistant' ? 'nm-inset text-primary' : 'nm-flat text-accent-sage'}`}>
+                                {msg.role === 'assistant' ? <Sparkles className="w-5 h-5" /> : <User className="w-5 h-5" />}
                             </div>
-                            <div className={`max-w-[80%] ${msg.role === 'user' ? 'text-right' : ''}`}>
-                                <div className={`inline-block rounded-xl px-4 py-3 text-sm font-body leading-relaxed whitespace-pre-wrap border-2 border-black ${msg.role === 'user' ? 'bg-nb-charcoal text-white rounded-tr-none shadow-nb-sm' : 'bg-white rounded-tl-none shadow-nb-sm'}`}>
+                            <div className={`max-w-[75%] ${msg.role === 'user' ? 'text-right' : ''}`}>
+                                <div className={`inline-block px-6 py-4 text-[15px] font-medium leading-relaxed whitespace-pre-wrap ${msg.role === 'user' ? 'nm-flat rounded-3xl rounded-tr-sm text-foreground' : 'nm-inset rounded-3xl rounded-tl-sm text-foreground bg-background/50'}`}>
                                     {msg.content}
                                 </div>
                                 {msg.sql && (
-                                    <div className="mt-2 p-2 rounded-lg bg-nb-sage/20 border-2 border-black text-left">
-                                        <div className="flex items-center gap-1 text-xs font-heading font-bold mb-1">
-                                            <Database className="w-3 h-3" /> Generated SQL
+                                    <div className="mt-3 p-4 rounded-2xl nm-inset text-left">
+                                        <div className="flex items-center gap-2 text-xs font-bold text-accent-indigo mb-2 uppercase tracking-widest">
+                                            <Database className="w-3.5 h-3.5" /> Generated SQL
                                         </div>
-                                        <code className="text-xs break-all font-mono">{msg.sql}</code>
+                                        <code className="text-[13px] break-all font-mono opacity-80">{msg.sql}</code>
                                     </div>
                                 )}
                                 {msg.type === 'kb' && (
-                                    <div className="mt-1 flex items-center gap-1 text-xs font-heading font-bold">
-                                        <Brain className="w-3 h-3" /> Knowledge Base
+                                    <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-accent-sage uppercase tracking-widest justify-start">
+                                        <Brain className="w-3.5 h-3.5" /> Knowledge Base Match
                                     </div>
                                 )}
-                                <p className="text-[10px] font-body text-muted-foreground mt-1">
+                                <p className="text-[11px] font-bold text-muted-foreground mt-2 opacity-60">
                                     {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </p>
                             </div>
@@ -139,40 +139,39 @@ export default function AiAssistant() {
                     ))}
                 </AnimatePresence>
                 {loading && (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-                        <div className="w-9 h-9 rounded-xl border-2 border-black bg-nb-charcoal flex items-center justify-center">
-                            <Sparkles className="w-4 h-4 text-nb-yellow" />
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-4 w-full">
+                        <div className="w-10 h-10 rounded-full nm-inset flex items-center justify-center flex-shrink-0 text-primary">
+                            <Sparkles className="w-5 h-5" />
                         </div>
-                        <div className="bg-white rounded-xl rounded-tl-none px-4 py-3 border-2 border-black shadow-nb-sm flex items-center gap-2">
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            <span className="text-sm font-body">Thinking with Gemini 2.0...</span>
+                        <div className="nm-inset rounded-3xl rounded-tl-sm px-6 py-4 flex items-center gap-3 bg-background/50">
+                            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                            <span className="text-[15px] font-medium text-muted-foreground animate-pulse">Thinking with Gemini 2.0...</span>
                         </div>
                     </motion.div>
                 )}
-                <div ref={ref} />
+                <div ref={ref} className="h-4" />
             </div>
 
-            <div className="mt-4 flex gap-2">
+            <div className="mt-6 flex gap-4">
                 <input
                     type="text"
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask anything about your support data..."
-                    className="nb-input flex-1"
+                    className="flex-1 nm-inset px-6 py-5 rounded-2xl bg-transparent outline-none text-foreground font-semibold placeholder:text-muted-foreground/50 transition-all focus:ring-0"
                     disabled={loading}
                 />
                 <button
                     onClick={() => send()}
                     disabled={loading || !input.trim()}
-                    className="nb-btn nb-btn-yellow disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="nm-button px-8 rounded-2xl flex items-center justify-center text-primary disabled:opacity-40"
                 >
-                    <Send className="w-4 h-4" />
+                    <Send className="w-5 h-5" />
                 </button>
             </div>
         </div>
     );
 }
 
-// Status indicator — shows green if we got a successful response, yellow otherwise
-const gemini_available_indicator = 'bg-green-500 animate-pulse';
+const gemini_available_indicator = 'bg-accent-emerald animate-pulse shadow-[0_0_8px_var(--accent-emerald)]';

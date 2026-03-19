@@ -90,165 +90,194 @@ export default function Settings() {
     ];
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
-            <h2 className="font-heading text-3xl font-extrabold tracking-tighter">Settings</h2>
+        <div className="max-w-4xl mx-auto space-y-8 pb-10">
+            <h2 className="text-3xl font-extrabold tracking-tight">Settings</h2>
 
-            <div className="flex gap-1 flex-wrap">
+            <div className="flex gap-2 nm-inset p-2 rounded-2xl flex-wrap">
                 {tabs.map(t => (
                     <button key={t.id} onClick={() => setTab(t.id)}
-                        className={`flex items-center gap-2 px-4 py-2 text-sm font-heading font-bold rounded-xl border-2 border-black transition-all ${tab === t.id ? 'bg-nb-charcoal text-white shadow-nb-sm' : 'bg-white hover:bg-nb-yellow'}`}>
-                        <t.icon className="w-4 h-4" /> {t.label}
+                        className={`flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl transition-all ${tab === t.id ? 'nm-flat text-foreground' : 'text-muted-foreground hover:text-foreground'}`}>
+                        <t.icon className={`w-4 h-4 ${tab === t.id ? 'text-primary' : ''}`} /> {t.label}
                     </button>
                 ))}
             </div>
 
-            <motion.div key={tab} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="nb-card-lg p-6">
+            <motion.div key={tab} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="nm-flat p-8 rounded-[32px]">
                 {tab === 'profile' && (
-                    <div className="space-y-5">
-                        <h3 className="font-heading text-xl font-extrabold">Profile</h3>
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="w-16 h-16 rounded-2xl bg-nb-charcoal border-2 border-black flex items-center justify-center text-nb-yellow text-2xl font-heading font-extrabold shadow-nb-sm">
+                    <div className="space-y-6">
+                        <h3 className="text-xl font-extrabold mb-6">Profile Information</h3>
+                        <div className="flex items-center gap-6 mb-8">
+                            <div className="w-24 h-24 rounded-full nm-inset flex items-center justify-center text-primary text-4xl font-extrabold relative overflow-hidden group">
                                 {profile.fullName?.charAt(0) || 'D'}
+                                <div className="absolute inset-0 bg-background/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                    <span className="text-xs font-bold uppercase tracking-widest text-foreground">Edit</span>
+                                </div>
                             </div>
                             <div>
-                                <p className="font-heading font-bold">{profile.fullName}</p>
-                                <p className="text-sm font-body text-muted-foreground">{profile.email}</p>
-                                <span className="nb-badge bg-nb-yellow text-xs mt-1">{user?.role}</span>
+                                <p className="text-2xl font-bold">{profile.fullName}</p>
+                                <p className="text-sm font-medium text-muted-foreground mt-1">{profile.email}</p>
+                                <div className="mt-3 inline-flex px-3 py-1 rounded-full nm-flat text-xs font-extrabold uppercase tracking-wider text-accent-emerald">
+                                    {user?.role}
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-heading font-bold mb-1.5">Full Name</label>
-                            <input type="text" value={profile.fullName} onChange={e => setProfile(p => ({ ...p, fullName: e.target.value }))} className="nb-input" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-heading font-bold mb-1.5">Email</label>
-                            <input type="email" value={profile.email} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} className="nb-input" />
+                        <div className="space-y-6">
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Full Name</label>
+                                <input type="text" value={profile.fullName} onChange={e => setProfile(p => ({ ...p, fullName: e.target.value }))} className="w-full nm-inset px-5 py-4 rounded-2xl bg-transparent outline-none text-foreground font-semibold" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Email Address</label>
+                                <input type="email" value={profile.email} onChange={e => setProfile(p => ({ ...p, email: e.target.value }))} className="w-full nm-inset px-5 py-4 rounded-2xl bg-transparent outline-none text-foreground font-semibold" />
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {tab === 'notifications' && (
-                    <div className="space-y-3">
-                        <h3 className="font-heading text-xl font-extrabold">Notifications</h3>
-                        {Object.entries(notifications).map(([item, enabled]) => (
-                            <div key={item} className="flex items-center justify-between py-3 border-b-2 border-black/10">
-                                <span className="text-sm font-heading font-bold">{item}</span>
-                                <button onClick={() => handleToggleNotif(item)}
-                                    className={`w-12 h-7 rounded-xl border-2 border-black relative transition-all shadow-nb-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${enabled ? 'bg-nb-charcoal' : 'bg-gray-200'}`}>
-                                    <div className={`w-5 h-5 rounded-lg bg-nb-yellow border border-black absolute top-0.5 transition-all ${enabled ? 'right-0.5' : 'left-0.5'}`} />
-                                </button>
-                            </div>
-                        ))}
+                    <div className="space-y-4">
+                        <h3 className="text-xl font-extrabold mb-6">Notification Preferences</h3>
+                        <div className="space-y-4">
+                            {Object.entries(notifications).map(([item, enabled]) => (
+                                <div key={item} className="flex items-center justify-between p-4 nm-inset rounded-2xl bg-background/20">
+                                    <span className="text-[15px] font-bold text-foreground">{item}</span>
+                                    <button onClick={() => handleToggleNotif(item)}
+                                        className={`w-14 h-8 rounded-full relative transition-all flex items-center p-1 ${enabled ? 'nm-flat' : 'nm-inset'}`}>
+                                        <div className={`w-6 h-6 rounded-full transition-all shadow-sm ${enabled ? 'bg-primary translate-x-6' : 'bg-muted-foreground/40 translate-x-0'}`} />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 )}
 
                 {tab === 'security' && (
-                    <div className="space-y-5">
-                        <h3 className="font-heading text-xl font-extrabold">Security</h3>
-                        <div>
-                            <label className="block text-sm font-heading font-bold mb-1.5">Current Password</label>
-                            <input type="password" value={passwords.current} onChange={e => setPasswords(p => ({ ...p, current: e.target.value }))} className="nb-input" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-heading font-bold mb-1.5">New Password</label>
-                            <input type="password" value={passwords.newPass} onChange={e => setPasswords(p => ({ ...p, newPass: e.target.value }))} className="nb-input" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-heading font-bold mb-1.5">Confirm New Password</label>
-                            <input type="password" value={passwords.confirm} onChange={e => setPasswords(p => ({ ...p, confirm: e.target.value }))} className="nb-input" />
+                    <div className="space-y-6">
+                        <h3 className="text-xl font-extrabold mb-6">Security Settings</h3>
+                        <div className="space-y-5">
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Current Password</label>
+                                <input type="password" value={passwords.current} onChange={e => setPasswords(p => ({ ...p, current: e.target.value }))} className="w-full nm-inset px-5 py-4 rounded-2xl bg-transparent outline-none text-foreground font-semibold font-mono" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">New Password</label>
+                                <input type="password" value={passwords.newPass} onChange={e => setPasswords(p => ({ ...p, newPass: e.target.value }))} className="w-full nm-inset px-5 py-4 rounded-2xl bg-transparent outline-none text-foreground font-semibold font-mono" />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Confirm New Password</label>
+                                <input type="password" value={passwords.confirm} onChange={e => setPasswords(p => ({ ...p, confirm: e.target.value }))} className="w-full nm-inset px-5 py-4 rounded-2xl bg-transparent outline-none text-foreground font-semibold font-mono" />
+                            </div>
                         </div>
                         {passError && (
-                            <div className="nb-badge bg-red-100 text-red-700 border-red-400 w-full justify-center">
-                                <AlertTriangle className="w-3 h-3" /> {passError}
+                            <div className="p-4 nm-inset rounded-2xl flex items-center gap-2 text-accent-rose font-bold text-sm bg-accent-rose/10">
+                                <AlertTriangle className="w-5 h-5" /> {passError}
                             </div>
                         )}
                         <button onClick={handlePasswordChange} disabled={!passwords.current || !passwords.newPass}
-                            className="nb-btn nb-btn-yellow nb-btn-sm disabled:opacity-40 disabled:cursor-not-allowed">
+                            className="nm-button px-8 py-4 font-bold disabled:opacity-40 w-full text-foreground hover:text-primary transition-colors">
                             Update Password
                         </button>
-                        <div className="flex items-center justify-between py-3 border-t-2 border-black/10">
-                            <div>
-                                <p className="text-sm font-heading font-bold">Two-Factor Auth</p>
-                                <p className="text-xs font-body text-muted-foreground">{twoFA ? 'Enabled — extra security active' : 'Add extra security to your account'}</p>
+
+                        <div className="pt-8 mt-8 border-t-[1px] border-border/10">
+                            <div className="flex items-center justify-between p-6 nm-inset rounded-2xl bg-background/20">
+                                <div>
+                                    <p className="text-lg font-bold">Two-Factor Auth</p>
+                                    <p className="text-sm font-medium text-muted-foreground mt-1">
+                                        {twoFA ? 'Enabled — extra security active' : 'Add extra security to your account'}
+                                    </p>
+                                </div>
+                                <button onClick={() => { setTwoFA(!twoFA); handleSave(); }}
+                                    className={`nm-button px-6 py-3 font-bold ${twoFA ? 'text-accent-rose' : 'text-accent-emerald'}`}>
+                                    {twoFA ? 'Disable' : 'Enable 2FA'}
+                                </button>
                             </div>
-                            <button onClick={() => { setTwoFA(!twoFA); handleSave(); }}
-                                className={`nb-btn nb-btn-sm ${twoFA ? 'nb-btn-sage' : 'nb-btn-yellow'}`}>
-                                {twoFA ? 'Disable' : 'Enable'}
-                            </button>
                         </div>
                     </div>
                 )}
 
                 {tab === 'integrations' && (
-                    <div className="space-y-3">
-                        <h3 className="font-heading text-xl font-extrabold">Integrations</h3>
-                        {integrations.map((int, index) => (
-                            <div key={int.name} className="flex items-center justify-between p-4 rounded-xl border-2 border-black bg-white shadow-nb-sm">
-                                <div>
-                                    <p className="font-heading font-bold text-sm">{int.name}</p>
-                                    <p className={`text-xs font-body ${int.connected ? 'text-green-700 font-bold' : 'text-muted-foreground'}`}>{int.status}</p>
+                    <div className="space-y-4">
+                        <h3 className="text-xl font-extrabold mb-6">Connected Apps</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {integrations.map((int, index) => (
+                                <div key={int.name} className="flex items-center justify-between p-6 rounded-2xl nm-inset bg-background/20">
+                                    <div>
+                                        <p className="font-bold text-lg mb-1">{int.name}</p>
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${int.connected ? 'bg-accent-emerald shadow-[0_0_8px_var(--accent-emerald)]' : 'bg-muted-foreground'}`} />
+                                            <p className={`text-xs font-bold tracking-widest uppercase ${int.connected ? 'text-accent-emerald' : 'text-muted-foreground'}`}>{int.status}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => handleToggleIntegration(index)}
+                                        className={`nm-button w-12 h-12 flex items-center justify-center rounded-full ${int.connected ? 'text-accent-rose' : 'text-accent-emerald'}`}>
+                                        {int.connected ? <Link2 className="w-5 h-5 opacity-50 block" /> : <Plus className="w-5 h-5" />}
+                                    </button>
                                 </div>
-                                <button onClick={() => handleToggleIntegration(index)}
-                                    className={`nb-btn nb-btn-sm ${int.connected ? 'nb-btn-sage' : 'nb-btn-yellow'}`}>
-                                    {int.connected ? 'Disconnect' : 'Connect'}
-                                </button>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 )}
 
                 {tab === 'team' && (
-                    <div className="space-y-3">
-                        <h3 className="font-heading text-xl font-extrabold">Team ({teamMembers.length})</h3>
-                        {teamMembers.map((m, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 rounded-xl border-2 border-black bg-white shadow-nb-sm">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-lg bg-nb-charcoal border-2 border-black flex items-center justify-center text-nb-yellow text-xs font-bold">{m.name[0]}</div>
-                                    <div>
-                                        <span className="text-sm font-heading font-bold">{m.name}</span>
-                                        {editingMember === index ? (
-                                            <div className="flex gap-1 mt-1">
-                                                {['Agent', 'Manager', 'Admin'].map(r => (
-                                                    <button key={r} onClick={() => handleRoleChange(index, r)}
-                                                        className={`px-2 py-0.5 text-[10px] font-heading font-bold rounded-lg border border-black ${m.role === r ? 'bg-nb-charcoal text-white' : 'bg-white hover:bg-nb-yellow'}`}>
-                                                        {r}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <p className="text-xs font-body text-muted-foreground">{m.role}</p>
-                                        )}
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-xl font-extrabold">Team Members <span className="opacity-40">({teamMembers.length})</span></h3>
+                        </div>
+                        <div className="space-y-4">
+                            {teamMembers.map((m, index) => (
+                                <div key={index} className="flex items-center justify-between p-4 rounded-2xl nm-inset bg-background/20">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-12 h-12 rounded-full nm-flat flex items-center justify-center text-primary text-xl font-extrabold">
+                                            {m.name[0]}
+                                        </div>
+                                        <div>
+                                            <span className="text-[15px] font-bold block">{m.name}</span>
+                                            {editingMember === index ? (
+                                                <div className="flex gap-2 mt-2">
+                                                    {['Agent', 'Manager', 'Admin'].map(r => (
+                                                        <button key={r} onClick={() => handleRoleChange(index, r)}
+                                                            className={`px-3 py-1 text-xs font-bold rounded-full transition-all ${m.role === r ? 'nm-flat text-primary' : 'nm-button text-muted-foreground hover:text-foreground'}`}>
+                                                            {r}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs font-bold tracking-widest uppercase text-muted-foreground mt-1">{m.role}</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button onClick={() => setEditingMember(editingMember === index ? null : index)}
+                                            className="nm-button px-4 py-2 font-bold text-sm text-foreground">
+                                            {editingMember === index ? 'Done' : 'Edit'}
+                                        </button>
+                                        <button onClick={() => handleRemoveMember(index)}
+                                            className="nm-button w-10 h-10 flex items-center justify-center text-accent-rose rounded-full">
+                                            <X className="w-4 h-4" />
+                                        </button>
                                     </div>
                                 </div>
-                                <div className="flex gap-1">
-                                    <button onClick={() => setEditingMember(editingMember === index ? null : index)}
-                                        className="nb-btn nb-btn-sm nb-btn-white">{editingMember === index ? 'Done' : 'Edit'}</button>
-                                    <button onClick={() => handleRemoveMember(index)}
-                                        className="w-8 h-8 rounded-lg border-2 border-black flex items-center justify-center text-red-500 hover:bg-red-50">
-                                        <X className="w-3.5 h-3.5" />
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                         <AnimatePresence>
                             {showInvite ? (
                                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                                    className="flex gap-2 overflow-hidden">
+                                    className="flex gap-3 overflow-hidden mt-6">
                                     <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
                                         onKeyDown={e => e.key === 'Enter' && handleInvite()}
-                                        placeholder="email@company.com" className="nb-input flex-1" autoFocus />
-                                    <button onClick={handleInvite} disabled={!inviteEmail.trim()} className="nb-btn nb-btn-yellow nb-btn-sm disabled:opacity-40">
-                                        <Mail className="w-3.5 h-3.5" /> Send
+                                        placeholder="email@company.com" className="nm-inset flex-1 px-5 py-4 rounded-2xl bg-transparent outline-none font-semibold text-foreground placeholder:text-muted-foreground/50" autoFocus />
+                                    <button onClick={handleInvite} disabled={!inviteEmail.trim()} className="nm-button px-8 font-bold text-primary disabled:opacity-40">
+                                        <Mail className="w-4 h-4 mr-2 inline-block" /> Send Invite
                                     </button>
                                     <button onClick={() => { setShowInvite(false); setInviteEmail(''); }}
-                                        className="nb-btn nb-btn-white nb-btn-sm">
-                                        <X className="w-3.5 h-3.5" />
+                                        className="nm-button w-14 h-14 flex items-center justify-center rounded-2xl flex-shrink-0">
+                                        <X className="w-5 h-5 text-muted-foreground" />
                                     </button>
                                 </motion.div>
                             ) : (
                                 <button onClick={() => setShowInvite(true)}
-                                    className="w-full py-3 text-sm font-heading font-bold border-2 border-dashed border-black rounded-xl hover:bg-nb-yellow transition-colors flex items-center justify-center gap-2">
-                                    <Plus className="w-4 h-4" /> Invite Member
+                                    className="w-full py-5 text-sm font-bold uppercase tracking-widest text-primary border-2 border-dashed border-border/10 rounded-2xl hover:bg-background/40 transition-colors flex items-center justify-center gap-2 mt-6">
+                                    <Plus className="w-5 h-5" /> Invite New Member
                                 </button>
                             )}
                         </AnimatePresence>
@@ -257,24 +286,24 @@ export default function Settings() {
 
                 {tab === 'appearance' && (
                     <div className="space-y-4">
-                        <h3 className="font-heading text-xl font-extrabold">Appearance</h3>
-                        <div className="flex items-center justify-between py-3">
+                        <h3 className="text-xl font-extrabold mb-6">Appearance</h3>
+                        <div className="flex items-center justify-between p-6 nm-inset rounded-2xl bg-background/20">
                             <div>
-                                <p className="text-sm font-heading font-bold">Dark Mode</p>
-                                <p className="text-xs font-body text-muted-foreground">{isDark ? 'Dark theme active' : 'Light theme active'}</p>
+                                <p className="text-lg font-bold mb-1">Theme Mode</p>
+                                <p className="text-sm font-medium text-muted-foreground">{isDark ? 'Dark theme active' : 'Light theme active'}</p>
                             </div>
                             <button onClick={toggleDark}
-                                className={`w-14 h-8 rounded-xl border-2 border-black relative transition-all shadow-nb-sm hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none ${isDark ? 'bg-nb-charcoal' : 'bg-nb-sage'}`}>
-                                <div className={`w-6 h-6 rounded-lg bg-nb-yellow border border-black absolute top-0.5 transition-all ${isDark ? 'right-0.5' : 'left-0.5'}`} />
+                                className={`w-16 h-8 rounded-full relative transition-all flex items-center p-1 ${isDark ? 'nm-flat' : 'nm-inset'}`}>
+                                <div className={`w-6 h-6 rounded-full transition-all shadow-sm ${isDark ? 'bg-primary translate-x-8' : 'bg-muted-foreground/40 translate-x-0'}`} />
                             </button>
                         </div>
                     </div>
                 )}
             </motion.div>
 
-            <div className="flex justify-end">
-                <button onClick={handleSave} className="nb-btn nb-btn-yellow shadow-nb-lg">
-                    {saved ? <><Check className="w-4 h-4" /> Saved!</> : <><Save className="w-4 h-4" /> Save Changes</>}
+            <div className="flex justify-end pt-4">
+                <button onClick={handleSave} className="nm-button px-8 py-4 font-bold flex items-center gap-2 text-primary shadow-lg shadow-background/10">
+                    {saved ? <><Check className="w-5 h-5 text-accent-emerald" /> Saved Successfully!</> : <><Save className="w-5 h-5" /> Save Changes</>}
                 </button>
             </div>
         </div>
