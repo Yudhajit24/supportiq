@@ -218,6 +218,20 @@ public class Ticket {
         this.updatedAt = updatedAt;
     }
 
+    // Add these two fields + getters/setters anywhere in the class body,
+// before the @PrePersist method:
+
+@Transient
+private String customerName;
+
+@Transient
+private String assignedToName;
+
+public String getCustomerName() { return customerName; }
+public void setCustomerName(String customerName) { this.customerName = customerName; }
+public String getAssignedToName() { return assignedToName; }
+public void setAssignedToName(String assignedToName) { this.assignedToName = assignedToName; }
+
     @PrePersist
     protected void onCreate() {
         createdAt = ZonedDateTime.now();

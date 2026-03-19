@@ -6,7 +6,14 @@ import { Download, Target, Users, Clock, TrendingUp, Check, Loader2 } from 'luci
 import { analyticsApi } from '../lib/api';
 
 const COLORS = ['#171e19', '#b7c6c2', '#ffe17c', '#272727', '#6b7280'];
-const tooltipStyle = { background: '#fff', border: '2px solid #000', borderRadius: '12px', boxShadow: '4px 4px 0px #000', fontFamily: 'Space Grotesk', fontSize: '12px' };
+const tooltipStyle = {
+    background: '#fff',
+    border: '2px solid #000',
+    borderRadius: '12px',
+    boxShadow: '4px 4px 0px #000',
+    fontFamily: 'Space Grotesk',
+    fontSize: '12px'
+};
 
 function Skeleton({ className }: { className: string }) {
     return <div className={`animate-pulse bg-black/10 rounded-lg ${className}`} />;
@@ -63,11 +70,17 @@ export default function Analytics() {
     }));
     const dash = dashRaw || {};
 
+    // Calculate resolution rate from available fields
+    const resolutionRate = dash.totalTickets > 0
+        ? Math.round((dash.resolvedTickets / dash.totalTickets) * 100)
+        : 0;
+
     const handleExport = () => {
         setExporting(true);
         setTimeout(() => {
-            const csvContent = ['Date,Created,Resolved', ...trendData.map((d: any) => `${d.date},${d.total ?? d.created ?? 0},${d.resolved ?? 0}`)].join('\n');
-            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const rows = ['Date,Created,Resolved', ...trendData.map((d: any) =>
+                `${d.date},${d.total ?? d.created ?? 0},${d.resolved ?? 0}`)];
+            const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -81,9 +94,9 @@ export default function Analytics() {
     };
 
     const kpis = [
-        { label: 'Resolution Rate', value: dashLoading ? '…' : `${dash.resolutionRate ?? 0}%`, icon: Target, bg: 'bg-white' },
-        { label: 'Avg Resolution', value: dashLoading ? '…' : `${dash.avgResolutionTimeHours ?? 0}h`, icon: Clock, bg: 'bg-nb-sage' },
-        { label: 'Avg CSAT', value: dashLoading ? '…' : `${dash.avgCustomerSatisfaction ?? 0}/5`, icon: TrendingUp, bg: 'bg-nb-yellow' },
+        { label: 'Resolution Rate', value: dashLoading ? '…' : `${resolutionRate}%`, icon: Target, bg: 'bg-white' },
+        { label: 'Avg Resolution', value: dashLoading ? '…' : `${(dash.avgResolutionTimeHours ?? 0).toFixed(1)}h`, icon: Clock, bg: 'bg-nb-sage' },
+        { label: 'Avg CSAT', value: dashLoading ? '…' : `${(dash.avgCustomerSatisfaction ?? 0).toFixed(1)}/5`, icon: TrendingUp, bg: 'bg-nb-yellow' },
         { label: 'Total Agents', value: dashLoading ? '…' : String(agentData.length || 0), icon: Users, bg: 'bg-nb-charcoal text-white' },
     ];
 

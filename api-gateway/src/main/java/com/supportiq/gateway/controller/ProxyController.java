@@ -8,7 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Enumeration;
+
 
 @RestController
 @RequestMapping("/api/v1")
@@ -85,8 +85,11 @@ public class ProxyController {
 
         HttpEntity<String> entity = new HttpEntity<>(body, headers);
         try {
-            return restTemplate.exchange(targetUrl, HttpMethod.valueOf(request.getMethod()),
+            ResponseEntity<String> response = restTemplate.exchange(targetUrl, HttpMethod.valueOf(request.getMethod()),
                     entity, String.class);
+            return ResponseEntity.status(response.getStatusCode())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response.getBody());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body("{\"error\": \"AI service unavailable: " + e.getMessage() + "\"}");
@@ -112,9 +115,13 @@ public class ProxyController {
 
         HttpEntity<String> entity = new HttpEntity<>(body, headers);
         try {
-            return restTemplate.exchange(targetUrl, HttpMethod.valueOf(request.getMethod()),
+            ResponseEntity<String> response = restTemplate.exchange(targetUrl, HttpMethod.valueOf(request.getMethod()),
                     entity, String.class);
+            return ResponseEntity.status(response.getStatusCode())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(response.getBody());
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
                     .body("{\"error\": \"Service unavailable: " + e.getMessage() + "\"}");
         }

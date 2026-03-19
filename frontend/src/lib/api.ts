@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
-const AI_BASE = import.meta.env.VITE_AI_SERVICE_URL || '';
 
 const api = axios.create({
     baseURL: API_BASE,
@@ -67,25 +66,22 @@ export const analyticsApi = {
     getSlaCompliance: () => api.get('/api/v1/analytics/sla-compliance'),
 };
 
-// AI
-const aiApi = axios.create({
-    baseURL: AI_BASE || API_BASE,
-    headers: { 'Content-Type': 'application/json' },
-});
-
+// AI — all routed through API Gateway, never direct to port 8001
 export const aiService = {
     categorize: (subject: string, description: string) =>
-        aiApi.post('/ai/categorize', { subject, description }),
+        api.post('/api/v1/ai/categorize', { subject, description }),
     analyzeSentiment: (text: string) =>
-        aiApi.post('/ai/analyze-sentiment', { text }),
+        api.post('/api/v1/ai/analyze-sentiment', { text }),
     suggestResponse: (data: { ticket_subject: string; ticket_description: string }) =>
-        aiApi.post('/ai/suggest-response', data),
+        api.post('/api/v1/ai/suggest-response', data),
     predictEscalation: (data: any) =>
-        aiApi.post('/ai/predict-escalation', data),
+        api.post('/api/v1/ai/predict-escalation', data),
     searchKnowledgeBase: (query: string) =>
-        aiApi.post('/ai/search-knowledge-base', { query }),
+        api.post('/api/v1/ai/search-knowledge-base', { query }),
     naturalLanguageQuery: (query: string) =>
-        aiApi.post('/ai/query', { query }),
+        api.post('/api/v1/ai/query', { query }),
+    chat: (message: string) =>
+        api.post('/api/v1/ai/chat', { message }),
 };
 
 export default api;
