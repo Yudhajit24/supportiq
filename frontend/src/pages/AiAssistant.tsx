@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User, Sparkles, Loader2, RefreshCw, Database, Brain } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Loader2, RefreshCw, Database, Brain, ChevronDown } from 'lucide-react';
 import { aiService } from '../lib/api';
 
 interface Message {
@@ -45,7 +45,30 @@ async function callAI(query: string): Promise<Message> {
     }
 }
 
+
+function SqlBlock({ sql }: { sql: string }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <div className="mt-3 rounded-2xl nm-inset text-left overflow-hidden">
+            <button
+                onClick={() => setOpen(o => !o)}
+                className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-bold text-accent-indigo uppercase tracking-widest hover:bg-background/40 transition-colors"
+            >
+                <Database className="w-3.5 h-3.5" />
+                View Query
+                <ChevronDown className={`w-3.5 h-3.5 ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
+            </button>
+            {open && (
+                <div className="px-4 pb-3 border-t border-border/10">
+                    <code className="text-[12px] break-all font-mono opacity-70 block mt-2">{sql}</code>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function AiAssistant() {
+
     const [messages, setMessages] = useState<Message[]>([{
         id: '1', role: 'assistant', timestamp: new Date(),
         content: "Hello! I can help with:\n\n• **Data queries** — Ask about your tickets, agents, or SLA\n• **Knowledge base** — Search procedures and policies\n• **Insights** — Powered by Mistral-7B (Open Source) ✨\n\nWhat would you like to know?",
@@ -119,12 +142,7 @@ export default function AiAssistant() {
                                     {msg.content}
                                 </div>
                                 {msg.sql && (
-                                    <div className="mt-3 p-4 rounded-2xl nm-inset text-left">
-                                        <div className="flex items-center gap-2 text-xs font-bold text-accent-indigo mb-2 uppercase tracking-widest">
-                                            <Database className="w-3.5 h-3.5" /> Generated SQL
-                                        </div>
-                                        <code className="text-[13px] break-all font-mono opacity-80">{msg.sql}</code>
-                                    </div>
+                                    <SqlBlock sql={msg.sql} />
                                 )}
                                 {msg.type === 'kb' && (
                                     <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-accent-sage uppercase tracking-widest justify-start">
