@@ -16,39 +16,42 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ai-service")
 
-groq_available = False
+hf_available = False
 llm = None
 
 try:
-    from langchain_groq import ChatGroq
+    from langchain_huggingface import ChatHuggingFace, HuggingFaceEndpoint
     from langchain_core.prompts import ChatPromptTemplate
 
-    api_key = os.getenv("GROQ_API_KEY", "")
-    if api_key and api_key != "your_groq_api_key_here":
-        llm = ChatGroq(
-            model="llama3-70b-8192",
-            api_key=api_key,
-            temperature=0.3
+    api_key = os.getenv("HUGGINGFACE_API_KEY", "")
+    if api_key and api_key != "your_huggingface_api_key_here":
+        hf_endpoint = HuggingFaceEndpoint(
+            repo_id="mistralai/Mistral-7B-Instruct-v0.3",
+            task="text-generation",
+            max_new_tokens=512,
+            temperature=0.3,
+            huggingfacehub_api_token=api_key
         )
-        groq_available = True
-        logger.info("✅ Groq Llama-3 70B initialized successfully")
+        llm = ChatHuggingFace(llm=hf_endpoint)
+        hf_available = True
+        logger.info("✅ Hugging Face (Mistral) initialized successfully")
     else:
-        logger.warning("⚠️ GROQ_API_KEY not set. Using keyword fallbacks.")
+        logger.warning("⚠️ HUGGINGFACE_API_KEY not set. Using keyword fallbacks.")
 except Exception as e:
-    logger.warning(f"⚠️ Could not initialize Groq: {e}. Using fallbacks.")
+    logger.warning(f"⚠️ Could not initialize Hugging Face: {e}. Using fallbacks.")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 AI Service starting up...")
-    logger.info(f"   Groq available: {groq_available}")
+    logger.info(f"   HF available: {hf_available}")
     yield
     logger.info("🛑 AI Service shutting down...")
 
 
 app = FastAPI(
     title="SupportIQ AI Service",
-    description="AI-powered ticket intelligence with Groq (Llama-3 70B)",
+    description="AI-powered ticket intelligence with Hugging Face",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -149,14 +152,14 @@ def parse_json_response(content: str) -> dict:
 async def health():
     return {
         "status": "healthy",
-        "groq_available": groq_available,
-        "model": "llama3-70b-8192" if groq_available else "fallback"
+        "hf_available": hf_available,
+        "model": "mistralai/Mistral-7B-Instruct-v0.3" if hf_available else "fallback"
     }
 
 
 @app.post("/ai/categorize", response_model=CategorizeResponse)
 async def categorize_ticket(request: CategorizeRequest):
-    if groq_available and llm:
+    if hf_available and llm:
         try:
             from langchain_core.prompts import ChatPromptTemplate
             prompt = ChatPromptTemplate.from_messages([
@@ -196,7 +199,7 @@ Return ONLY valid JSON: {{"category": "...", "priority": "...", "confidence": 0.
 
 @app.post("/ai/analyze-sentiment", response_model=SentimentResponse)
 async def analyze_sentiment(request: SentimentRequest):
-    if groq_available and llm:
+    if hf_available and llm:
         try:
             from langchain_core.prompts import ChatPromptTemplate
             prompt = ChatPromptTemplate.from_messages([
@@ -233,7 +236,7 @@ Return ONLY valid JSON: {{"sentiment_score": -1.0 to 1.0, "is_frustrated": true/
 
 @app.post("/ai/suggest-response", response_model=SuggestResponseResponse)
 async def suggest_response(request: SuggestResponseRequest):
-    if groq_available and llm:
+    if hf_available and llm:
         try:
             from langchain_core.prompts import ChatPromptTemplate
             history_text = "\n".join(request.conversation_history) if request.conversation_history else "No prior conversation"
@@ -326,7 +329,7 @@ async def predict_escalation(request: EscalationRequest):
 
 @app.post("/ai/search-knowledge-base", response_model=KBSearchResponse)
 async def search_knowledge_base(request: KBSearchRequest):
-    if groq_available and llm:
+    if hf_available and llm:
         try:
             from langchain_core.prompts import ChatPromptTemplate
             prompt = ChatPromptTemplate.from_messages([
@@ -362,7 +365,7 @@ If you don't know, say so. Keep answers under 150 words."""),
 
 @app.post("/ai/query", response_model=NLQueryResponse)
 async def natural_language_query(request: NLQueryRequest):
-    if groq_available and llm:
+    if hf_available and llm:
         try:
             from langchain_core.prompts import ChatPromptTemplate
             prompt = ChatPromptTemplate.from_messages([
