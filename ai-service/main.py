@@ -16,39 +16,39 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ai-service")
 
-gemini_available = False
+groq_available = False
 llm = None
 
 try:
-    from langchain_google_genai import ChatGoogleGenerativeAI
+    from langchain_groq import ChatGroq
     from langchain_core.prompts import ChatPromptTemplate
 
-    api_key = os.getenv("GEMINI_API_KEY", "")
-    if api_key and api_key != "your_gemini_api_key_here":
-        llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
-            google_api_key=api_key,
+    api_key = os.getenv("GROQ_API_KEY", "")
+    if api_key and api_key != "your_groq_api_key_here":
+        llm = ChatGroq(
+            model="llama3-70b-8192",
+            api_key=api_key,
             temperature=0.3
         )
-        gemini_available = True
-        logger.info("✅ Gemini 2.0 Flash initialized successfully")
+        groq_available = True
+        logger.info("✅ Groq Llama-3 70B initialized successfully")
     else:
-        logger.warning("⚠️ GEMINI_API_KEY not set. Using keyword fallbacks.")
+        logger.warning("⚠️ GROQ_API_KEY not set. Using keyword fallbacks.")
 except Exception as e:
-    logger.warning(f"⚠️ Could not initialize Gemini: {e}. Using fallbacks.")
+    logger.warning(f"⚠️ Could not initialize Groq: {e}. Using fallbacks.")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("🚀 AI Service starting up...")
-    logger.info(f"   Gemini available: {gemini_available}")
+    logger.info(f"   Groq available: {groq_available}")
     yield
     logger.info("🛑 AI Service shutting down...")
 
 
 app = FastAPI(
     title="SupportIQ AI Service",
-    description="AI-powered ticket intelligence with Google Gemini 2.0 Flash",
+    description="AI-powered ticket intelligence with Groq (Llama-3 70B)",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -149,14 +149,14 @@ def parse_json_response(content: str) -> dict:
 async def health():
     return {
         "status": "healthy",
-        "gemini_available": gemini_available,
-        "model": "gemini-2.0-flash" if gemini_available else "fallback"
+        "groq_available": groq_available,
+        "model": "llama3-70b-8192" if groq_available else "fallback"
     }
 
 
 @app.post("/ai/categorize", response_model=CategorizeResponse)
 async def categorize_ticket(request: CategorizeRequest):
-    if gemini_available and llm:
+    if groq_available and llm:
         try:
             from langchain_core.prompts import ChatPromptTemplate
             prompt = ChatPromptTemplate.from_messages([
@@ -196,7 +196,7 @@ Return ONLY valid JSON: {{"category": "...", "priority": "...", "confidence": 0.
 
 @app.post("/ai/analyze-sentiment", response_model=SentimentResponse)
 async def analyze_sentiment(request: SentimentRequest):
-    if gemini_available and llm:
+    if groq_available and llm:
         try:
             from langchain_core.prompts import ChatPromptTemplate
             prompt = ChatPromptTemplate.from_messages([
@@ -233,7 +233,7 @@ Return ONLY valid JSON: {{"sentiment_score": -1.0 to 1.0, "is_frustrated": true/
 
 @app.post("/ai/suggest-response", response_model=SuggestResponseResponse)
 async def suggest_response(request: SuggestResponseRequest):
-    if gemini_available and llm:
+    if groq_available and llm:
         try:
             from langchain_core.prompts import ChatPromptTemplate
             history_text = "\n".join(request.conversation_history) if request.conversation_history else "No prior conversation"
@@ -326,7 +326,7 @@ async def predict_escalation(request: EscalationRequest):
 
 @app.post("/ai/search-knowledge-base", response_model=KBSearchResponse)
 async def search_knowledge_base(request: KBSearchRequest):
-    if gemini_available and llm:
+    if groq_available and llm:
         try:
             from langchain_core.prompts import ChatPromptTemplate
             prompt = ChatPromptTemplate.from_messages([
@@ -362,7 +362,7 @@ If you don't know, say so. Keep answers under 150 words."""),
 
 @app.post("/ai/query", response_model=NLQueryResponse)
 async def natural_language_query(request: NLQueryRequest):
-    if gemini_available and llm:
+    if groq_available and llm:
         try:
             from langchain_core.prompts import ChatPromptTemplate
             prompt = ChatPromptTemplate.from_messages([
@@ -395,7 +395,7 @@ Return ONLY valid JSON: {{"sql": "SELECT ...", "explanation": "This query..."}}"
             explanation="Agent performance metrics showing total vs resolved tickets per agent", results=[])
     return NLQueryResponse(
         sql="SELECT id, subject, status, priority, created_at FROM tickets ORDER BY created_at DESC LIMIT 20",
-        explanation="Showing most recent tickets (set GEMINI_API_KEY for natural language queries)", results=[])
+        explanation="Showing most recent tickets (set GROQ_API_KEY for natural language queries)", results=[])
 
 
 @app.post("/ai/chat", response_model=ChatResponse)
