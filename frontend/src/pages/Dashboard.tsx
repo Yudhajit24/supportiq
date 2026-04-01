@@ -80,7 +80,7 @@ function SystemMonitoring() {
             "NETWORK: Establishing secure WSS connection... [OK]",
             "KAFKA: Connected to topic 'ticket-events'...",
             "REDIS: Cache warm-up complete. Hit rate 98.4%",
-            "AI_SERVICE: Gemini 2.0 readiness confirmed.",
+            "AI_SERVICE: Mistral-7B (Hugging Face) ready.",
             "ROUTER: Traffic normalized. Latency: 42ms."
         ];
         
@@ -227,7 +227,7 @@ export default function Dashboard() {
                 <button onClick={() => navigate('/tickets')} className="nm-button flex items-center gap-2 px-6 py-3 font-bold text-sm text-primary group">
                     <Ticket className="w-4 h-4" /> New Ticket
                 </button>
-                <button className="nm-button flex items-center gap-2 px-6 py-3 font-bold text-sm text-accent-emerald group">
+                <button onClick={() => navigate('/settings')} className="nm-button flex items-center gap-2 px-6 py-3 font-bold text-sm text-accent-emerald group">
                     <Users className="w-4 h-4" /> Users List
                 </button>
                 <button onClick={() => navigate('/analytics')} className="nm-button flex items-center gap-2 px-6 py-3 font-bold text-sm text-accent-indigo group">

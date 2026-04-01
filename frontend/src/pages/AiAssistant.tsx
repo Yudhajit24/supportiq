@@ -48,7 +48,7 @@ async function callAI(query: string): Promise<Message> {
 export default function AiAssistant() {
     const [messages, setMessages] = useState<Message[]>([{
         id: '1', role: 'assistant', timestamp: new Date(),
-        content: "Hello! I can help with:\n\n• **Data queries** — Ask about your tickets, agents, or SLA\n• **Knowledge base** — Search procedures and policies\n• **Insights** — Powered by Google Gemini 2.0 ✨\n\nWhat would you like to know?",
+        content: "Hello! I can help with:\n\n• **Data queries** — Ask about your tickets, agents, or SLA\n• **Knowledge base** — Search procedures and policies\n• **Insights** — Powered by Mistral-7B (Open Source) ✨\n\nWhat would you like to know?",
     }]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
@@ -86,7 +86,7 @@ export default function AiAssistant() {
                         <h2 className="text-3xl font-extrabold tracking-tight">AI Assistant</h2>
                         <p className="text-sm font-medium text-muted-foreground flex items-center gap-2 mt-1">
                             <span className={`w-2.5 h-2.5 rounded-full ${gemini_available_indicator}`} />
-                            Powered by Google Gemini 2.0 Flash
+                            Powered by Mistral-7B (Open Source)
                         </p>
                     </div>
                 </div>
@@ -145,7 +145,7 @@ export default function AiAssistant() {
                         </div>
                         <div className="nm-inset rounded-3xl rounded-tl-sm px-6 py-4 flex items-center gap-3 bg-background/50">
                             <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                            <span className="text-[15px] font-medium text-muted-foreground animate-pulse">Thinking with Gemini 2.0...</span>
+                            <span className="text-[15px] font-medium text-muted-foreground animate-pulse">Thinking with Mistral...</span>
                         </div>
                     </motion.div>
                 )}
