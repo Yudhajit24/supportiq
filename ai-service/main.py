@@ -1,6 +1,6 @@
 """
 SupportIQ AI Service
-FastAPI service with Google Gemini integration for ticket intelligence.
+FastAPI service with Hugging Face (Mistral) integration for ticket intelligence.
 """
 import os
 import logging
@@ -10,6 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
 from dotenv import load_dotenv
+from sqlalchemy import create_engine, text as sql_text
 
 load_dotenv()
 
@@ -39,6 +40,73 @@ try:
         logger.warning("⚠️ HUGGINGFACE_API_KEY not set. Using keyword fallbacks.")
 except Exception as e:
     logger.warning(f"⚠️ Could not initialize Hugging Face: {e}. Using fallbacks.")
+
+
+# ========== Database Setup ==========
+
+db_engine = None
+try:
+    db_url = (
+        f"postgresql+psycopg://{os.getenv('POSTGRES_USER', 'supportiq_user')}"
+        f":{os.getenv('POSTGRES_PASSWORD', 'supportiq_pass')}"
+        f"@{os.getenv('POSTGRES_HOST', 'localhost')}"
+        f":{os.getenv('POSTGRES_PORT', '5432')}"
+        f"/{os.getenv('POSTGRES_DB', 'supportiq')}"
+    )
+    db_engine = create_engine(db_url, pool_pre_ping=True)
+    logger.info("✅ Database connection established")
+except Exception as e:
+    logger.warning(f"⚠️ Could not connect to DB: {e}")
+
+
+def execute_sql(sql: str, limit: int = 10) -> list:
+    """Execute a SQL query safely and return results as list of dicts."""
+    if not db_engine:
+        return []
+    try:
+        # Ensure we don't return too many rows
+        safe_sql = sql.rstrip(';')
+        if 'LIMIT' not in safe_sql.upper():
+            safe_sql = f"{safe_sql} LIMIT {limit}"
+        with db_engine.connect() as conn:
+            result = conn.execute(sql_text(safe_sql))
+            columns = list(result.keys())
+            return [dict(zip(columns, row)) for row in result.fetchall()]
+    except Exception as e:
+        logger.error(f"SQL execution error: {e}")
+        return []
+
+
+def results_to_nl(question: str, results: list) -> str:
+    """Convert query results to a conversational NL response using Mistral or a table fallback."""
+    if not results:
+        return "I searched the database but couldn't find any matching data for your query."
+
+    if hf_available and llm:
+        try:
+            from langchain_core.prompts import ChatPromptTemplate
+            results_str = str(results[:8])
+            prompt = ChatPromptTemplate.from_messages([
+                ("system", """You are a helpful customer support analytics assistant.
+The user asked a question and you ran a database query. Summarize the results in clear, natural, conversational language.
+Be specific with numbers. Do NOT mention SQL or databases. Keep it to 3-5 sentences."""),
+                ("user", f"User's question: {question}\n\nQuery results (as data): {results_str}\n\nPlease give a natural language summary:")
+            ])
+            chain = prompt | llm
+            result = chain.invoke({})
+            return result.content.strip()
+        except Exception as e:
+            logger.error(f"NL formatting error: {e}")
+
+    # Fallback: build a simple readable list
+    lines = []
+    for i, row in enumerate(results[:8], 1):
+        parts = []
+        for k, v in row.items():
+            label = k.replace('_', ' ').title()
+            parts.append(f"{label}: {v}")
+        lines.append(f"{i}. " + " | ".join(parts))
+    return "Here's what I found:\n\n" + "\n".join(lines)
 
 
 @asynccontextmanager
@@ -404,28 +472,35 @@ Return ONLY valid JSON: {{"sql": "SELECT ...", "explanation": "This query..."}}"
 @app.post("/ai/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     q = request.message.lower()
-    
+
     # Data/SQL intent keywords
-    sql_keywords = ["how many", "count", "performance", "agent", "agents", "trending", 
-                    "metrics", "stats", "statistics", "average", "report", "show me tickets", 
+    sql_keywords = ["how many", "count", "performance", "agent", "agents", "trending",
+                    "metrics", "stats", "statistics", "average", "report", "show me tickets",
                     "list", "urgent", "resolved"]
-    
-    # KB intent keywords (more strict to avoid catching analytical 'how' questions)
+
+    # KB intent keywords
     kb_keywords = ["what is", "explain", "procedure", "process", "policy",
                    "password", "reset", "billing", "refund", "cancel", "sla",
                    "setup", "configure", "help", "best practice", "guide", "documentation"]
-                   
-    # Route to SQL if data keywords are present, otherwise KB if kb keywords present.
+
     if any(k in q for k in sql_keywords):
+        # Generate SQL
         nl_req = NLQueryRequest(query=request.message)
         result = await natural_language_query(nl_req)
+
+        # Execute and convert to natural language
+        if result.sql:
+            data = execute_sql(result.sql)
+            nl_reply = results_to_nl(request.message, data)
+            return ChatResponse(reply=nl_reply, type="insight", sql=result.sql)
+
         return ChatResponse(reply=result.explanation, type="sql", sql=result.sql)
+
     elif any(k in q for k in kb_keywords):
         kb_req = KBSearchRequest(query=request.message)
         result = await search_knowledge_base(kb_req)
         return ChatResponse(reply=result.answer, type="kb")
     else:
-        # Default fallback to KB for conversational general questions
         kb_req = KBSearchRequest(query=request.message)
         result = await search_knowledge_base(kb_req)
         return ChatResponse(reply=result.answer, type="kb")
